@@ -48,7 +48,7 @@ class DPSmol(pl.LightningModule):
         return loss 
     
     def configure_optimizers(self) -> Any:
-        optimizer = optim.SGD(self.model.parameters(), lr=1e-3)
+        optimizer = optim.AdamW(self.model.parameters(), lr=5e-4)
 
         return optimizer
 
