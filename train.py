@@ -57,8 +57,8 @@ def main():
         T.ToTensor()
     ])
 
-    train_set = dataset.get_subset("train", transform=transform, frac=0.1)
-    val_set_id = dataset.get_subset("id_val", transform=transform, frac=0.1)
+    train_set = dataset.get_subset("train", transform=transform)
+    val_set_id = dataset.get_subset("id_val", transform=transform)
 
     trainer = pl.Trainer(accelerator="auto", max_epochs=1)
 
