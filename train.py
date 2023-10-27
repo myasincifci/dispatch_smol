@@ -9,6 +9,7 @@ from torch import nn, optim
 from torchmetrics import Accuracy
 from torchvision import transforms as T
 from torchvision.models.resnet import resnet18
+from torchvision.models.densenet import densenet121
 from wilds import get_dataset
 from wilds.common.data_loaders import get_eval_loader, get_train_loader
 from wilds.common.grouper import CombinatorialGrouper
@@ -20,7 +21,7 @@ class DPSmol(pl.LightningModule):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.model = resnet18(num_classes=2)
+        self.model = densenet121(num_classes=2)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.metric = Accuracy("binary")
 
@@ -48,7 +49,7 @@ class DPSmol(pl.LightningModule):
         return loss 
     
     def configure_optimizers(self) -> Any:
-        optimizer = optim.AdamW(self.model.parameters(), lr=5e-4)
+        optimizer = optim.SGD(self.model.parameters(), lr=1e-3, weight_decay=1e-2, momentum=0.9)
 
         return optimizer
 
@@ -87,14 +88,14 @@ def main():
 
     wandb_logger = WandbLogger()
 
-    trainer = pl.Trainer(accelerator="auto", max_epochs=50, logger=wandb_logger)
+    trainer = pl.Trainer(accelerator="auto", max_epochs=10, logger=wandb_logger)
 
     trainer.fit(
         DPSmol(),
-        train_dataloaders=get_train_loader("standard", train_set, batch_size=64, num_workers=4),
+        train_dataloaders=get_train_loader("standard", train_set, batch_size=32, num_workers=4),
         val_dataloaders=[
-                get_eval_loader("standard", val_set_id, batch_size=64, num_workers=4),
-                get_eval_loader("standard", val_set_ood, batch_size=64, num_workers=4)
+                get_eval_loader("standard", val_set_id, batch_size=32, num_workers=4),
+                get_eval_loader("standard", val_set_ood, batch_size=32, num_workers=4)
         ]
     )
 
