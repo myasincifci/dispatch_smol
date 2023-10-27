@@ -69,6 +69,7 @@ def main():
     )
 
     ############################################################################
+    torch.set_float32_matmul_precision('medium')
 
     dataset = get_dataset("camelyon17", root_dir="../data")
     domain_mapper = DomainMapper(dataset.metadata_array[:,0])
