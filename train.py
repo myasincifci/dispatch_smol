@@ -34,14 +34,16 @@ class DPSmol(pl.LightningModule):
 
         return loss
     
-    def validation_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
+    def validation_step(self, batch, batch_idx, dataloader_idx) -> STEP_OUTPUT | None:
+        loader_name = "ID" if dataloader_idx == 0 else "OOD"
+
         X, t, M = batch 
         y = self.model(X)
 
         loss = self.criterion(y, t) 
         acc = self.metric(y.argmax(dim=1), t)
 
-        self.log('accuracy', acc, on_epoch=True)
+        self.log(f"accuracy ({loader_name})", acc, on_epoch=True)
         
         return loss 
     
@@ -81,6 +83,7 @@ def main():
 
     train_set = dataset.get_subset("train", transform=transform)
     val_set_id = dataset.get_subset("id_val", transform=transform)
+    val_set_ood = dataset.get_subset("val", transform=transform)
 
     wandb_logger = WandbLogger()
 
@@ -88,8 +91,11 @@ def main():
 
     trainer.fit(
         DPSmol(),
-        get_train_loader("standard", train_set, batch_size=64, num_workers=4),
-        get_eval_loader("standard", val_set_id, batch_size=64, num_workers=4)
+        train_dataloaders=get_train_loader("standard", train_set, batch_size=64, num_workers=4),
+        val_dataloaders=[
+                get_eval_loader("standard", val_set_id, batch_size=64, num_workers=4),
+                get_eval_loader("standard", val_set_ood, batch_size=64, num_workers=4)
+        ]
     )
 
 if __name__ == "__main__":
