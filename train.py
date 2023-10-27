@@ -24,7 +24,7 @@ class DPSmol(pl.LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
         self.metric = Accuracy("binary")
 
-    def training_step(self, batch) -> STEP_OUTPUT:
+    def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         X, t, M = batch
         y = self.model(X)
 
@@ -34,7 +34,7 @@ class DPSmol(pl.LightningModule):
 
         return loss
     
-    def validation_step(self, batch) -> STEP_OUTPUT | None:
+    def validation_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
         X, t, M = batch 
         y = self.model(X)
 
