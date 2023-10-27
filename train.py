@@ -87,8 +87,8 @@ def main():
 
     trainer.fit(
         DPSmol(),
-        get_train_loader("standard", train_set, batch_size=64, num_workers=8),
-        get_eval_loader("standard", val_set_id, batch_size=64, num_workers=8)
+        get_train_loader("standard", train_set, batch_size=64, num_workers=4),
+        get_eval_loader("standard", val_set_id, batch_size=64, num_workers=4)
     )
 
 if __name__ == "__main__":
