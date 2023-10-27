@@ -83,11 +83,12 @@ def main():
 
     wandb_logger = WandbLogger()
 
-    trainer = pl.Trainer(accelerator="auto", max_epochs=1, logger=wandb_logger)
+    trainer = pl.Trainer(accelerator="auto", max_epochs=50, logger=wandb_logger)
 
     trainer.fit(
         DPSmol(),
-        get_train_loader("standard", train_set, batch_size=64, num_workers=8)
+        get_train_loader("standard", train_set, batch_size=64, num_workers=8),
+        get_eval_loader("standard", val_set_id, batch_size=64, num_workers=8)
     )
 
 if __name__ == "__main__":
