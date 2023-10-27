@@ -1,4 +1,4 @@
-logging: False
+logging: True
 max_epochs: 5
 param:
     lr: 1e-3
