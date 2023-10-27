@@ -1,5 +1,5 @@
-logging: False
-max_epochs: 10
+logging: True
+max_epochs: 5
 param:
     lr: 1e-3
     weight_decay: 1e-2
