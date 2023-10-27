@@ -1,18 +1,20 @@
 from typing import Any, Optional
+
+import pytorch_lightning as pl
+import torch
+import wandb
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.utilities.types import STEP_OUTPUT
+from torch import nn, optim
 from torchmetrics import Accuracy
+from torchvision import transforms as T
+from torchvision.models.resnet import resnet18
+from wilds import get_dataset
+from wilds.common.data_loaders import get_eval_loader, get_train_loader
+from wilds.common.grouper import CombinatorialGrouper
 
 from utils import DomainMapper
 
-import torch
-from torch import optim, nn
-import pytorch_lightning as pl
-from pytorch_lightning.utilities.types import STEP_OUTPUT
-from torchvision.models.resnet import resnet18
-from torchvision import transforms as T
-
-from wilds import get_dataset
-from wilds.common.data_loaders import get_train_loader, get_eval_loader
-from wilds.common.grouper import CombinatorialGrouper
 
 class DPSmol(pl.LightningModule):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -49,6 +51,25 @@ class DPSmol(pl.LightningModule):
         return optimizer
 
 def main():
+     # start a new wandb run to track this script
+    wandb.login(
+        key="deeed2a730495791be1a0158cf49240b65df1ffa"
+    )
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="wild-finetuning",
+        
+        # track hyperparameters and run metadata
+        config={
+            "learning_rate": 1e-3,
+            "batch_size": 64,
+            "architecture": "ResNet 50",
+            "dataset": "camelyon17",
+        }
+    )
+
+    ############################################################################
+
     dataset = get_dataset("camelyon17", root_dir="../data")
     domain_mapper = DomainMapper(dataset.metadata_array[:,0])
     grouper = CombinatorialGrouper(dataset, ['hospital'])
@@ -60,11 +81,13 @@ def main():
     train_set = dataset.get_subset("train", transform=transform)
     val_set_id = dataset.get_subset("id_val", transform=transform)
 
-    trainer = pl.Trainer(accelerator="auto", max_epochs=1)
+    wandb_logger = WandbLogger()
+
+    trainer = pl.Trainer(accelerator="auto", max_epochs=1, logger=wandb_logger)
 
     trainer.fit(
         DPSmol(),
-        get_train_loader("standard", train_set, batch_size=64)
+        get_train_loader("standard", train_set, batch_size=64, num_workers=8)
     )
 
 if __name__ == "__main__":
