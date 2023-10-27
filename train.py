@@ -39,7 +39,7 @@ class DPSmol(pl.LightningModule):
         y = self.model(X)
 
         loss = self.criterion(y, t) 
-        acc = self.metric(y, t)
+        acc = self.metric(y.argmax(dim=1), t)
 
         self.log('accuracy', acc, on_epoch=True)
         
