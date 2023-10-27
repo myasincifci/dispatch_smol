@@ -16,14 +16,21 @@ from wilds.common.grouper import CombinatorialGrouper
 
 from utils import DomainMapper
 
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
 
 class DPSmol(pl.LightningModule):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
         self.model = densenet121(num_classes=2)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.metric = Accuracy("binary")
+
+        self.lr = kwargs["lr"]
+        self.weight_decay = kwargs["weight_decay"]
+        self.momentum = kwargs["momentum"]
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         X, t, M = batch
@@ -49,27 +56,40 @@ class DPSmol(pl.LightningModule):
         return loss 
     
     def configure_optimizers(self) -> Any:
-        optimizer = optim.SGD(self.model.parameters(), lr=1e-3, weight_decay=1e-2, momentum=0.9)
+        optimizer = optim.SGD(
+            self.model.parameters(), 
+            lr=self.lr,
+            weight_decay=self.weight_decay, 
+            momentum=self.momentum
+        )
 
         return optimizer
 
-def main():
-     # start a new wandb run to track this script
-    wandb.login(
-        key="deeed2a730495791be1a0158cf49240b65df1ffa"
-    )
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project="wild-finetuning",
-        
-        # track hyperparameters and run metadata
-        config={
-            "learning_rate": 1e-3,
-            "batch_size": 64,
-            "architecture": "ResNet 50",
-            "dataset": "camelyon17",
-        }
-    )
+@hydra.main(version_base=None, config_path="configs")
+def main(cfg : DictConfig) -> None:
+    print(OmegaConf.to_yaml(cfg))
+    logger = True
+    if cfg.logging:
+        # start a new wandb run to track this script
+        wandb.login(
+            key="deeed2a730495791be1a0158cf49240b65df1ffa"
+        )
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project="wild-finetuning",
+            
+            # track hyperparameters and run metadata
+            config={
+                "learning_rate": cfg.param.lr,
+                "weight_decay": cfg.param.weight_decay,
+                "momentum": cfg.param.momentum,
+                "batch_size": cfg.param.batch_size,
+
+                "architecture": "ResNet 50",
+                "dataset": "camelyon17",
+            }
+        )
+        logger = WandbLogger()
 
     ############################################################################
     torch.set_float32_matmul_precision('medium')
@@ -86,16 +106,18 @@ def main():
     val_set_id = dataset.get_subset("id_val", transform=transform)
     val_set_ood = dataset.get_subset("val", transform=transform)
 
-    wandb_logger = WandbLogger()
-
-    trainer = pl.Trainer(accelerator="auto", max_epochs=10, logger=wandb_logger)
+    trainer = pl.Trainer(accelerator="auto", max_epochs=cfg.max_epochs, logger=logger)
 
     trainer.fit(
-        DPSmol(),
-        train_dataloaders=get_train_loader("standard", train_set, batch_size=32, num_workers=4),
+        DPSmol(
+            lr=cfg.param.lr, 
+            weight_decay=cfg.param.weight_decay, 
+            momentum=cfg.param.momentum
+        ),
+        train_dataloaders=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
         val_dataloaders=[
-                get_eval_loader("standard", val_set_id, batch_size=32, num_workers=4),
-                get_eval_loader("standard", val_set_ood, batch_size=32, num_workers=4)
+                get_eval_loader("standard", val_set_id, batch_size=cfg.param.batch_size, num_workers=4),
+                get_eval_loader("standard", val_set_ood, batch_size=cfg.param.batch_size, num_workers=4)
         ]
     )
 

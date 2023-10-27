@@ -8,4 +8,8 @@
 # 1. copy the squashed dataset to the nodes /tmp 
 rsync -ah --progress /home/myasincifci/data/camelyon17_v1.0.sqfs /tmp/
 
-apptainer run --nv -B /tmp/camelyon17_v1.0.sqfs:/data/camelyon17_v1.0:image-src=/ ../containers/dispatch.sif python train.py 
+apptainer run --nv -B /tmp/camelyon17_v1.0.sqfs:/data/camelyon17_v1.0:image-src=/ \
+    ../containers/dispatch.sif \
+    python \
+        train.py \
+            --config-name wilds_erm
