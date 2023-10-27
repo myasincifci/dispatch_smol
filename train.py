@@ -1,54 +1,60 @@
 from typing import Any, Optional
 
+import hydra
 import pytorch_lightning as pl
 import torch
-import wandb
+from omegaconf import DictConfig, OmegaConf
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import nn, optim
 from torchmetrics import Accuracy
 from torchvision import transforms as T
-from torchvision.models.resnet import resnet18
 from torchvision.models.densenet import densenet121
+from torchvision.models.resnet import resnet18
 from wilds import get_dataset
 from wilds.common.data_loaders import get_eval_loader, get_train_loader
 from wilds.common.grouper import CombinatorialGrouper
 
+import wandb
+from models import DANN
 from utils import DomainMapper
-
-import hydra
-from omegaconf import DictConfig, OmegaConf
 
 
 class DPSmol(pl.LightningModule):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, grouper, alpha, domain_mapper, *args: Any, **kwargs: Any) -> None:
         super().__init__()
 
-        self.model = densenet121(num_classes=2)
-        self.criterion = torch.nn.CrossEntropyLoss()
+        # self.model = densenet121(num_classes=2)
+        # self.criterion = torch.nn.CrossEntropyLoss()
+        self.model = DANN(alpha=alpha)
+
         self.metric = Accuracy("binary")
 
         self.lr = kwargs["lr"]
         self.weight_decay = kwargs["weight_decay"]
         self.momentum = kwargs["momentum"]
 
+        self.grouper: CombinatorialGrouper = grouper
+        self.domain_mapper = domain_mapper
+
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         X, t, M = batch
-        y = self.model(X)
+        d = self.domain_mapper(self.grouper.metadata_to_group(M))
 
-        loss = self.criterion(y,t)
+        loss_pred, loss_disc = self.model(X, t, d)
 
-        self.log("loss", loss, prog_bar=True)
+        self.log("loss_pred", loss_pred, prog_bar=True)
+        self.log("loss_disc", loss_disc, prog_bar=True)
 
-        return loss
+        return loss_pred + loss_disc
     
     def validation_step(self, batch, batch_idx, dataloader_idx) -> STEP_OUTPUT | None:
         loader_name = "ID" if dataloader_idx == 0 else "OOD"
 
         X, t, M = batch 
-        y = self.model(X)
+        y, loss = self.model.forward_pred(X, t)
 
-        loss = self.criterion(y, t) 
         acc = self.metric(y.argmax(dim=1), t)
 
         self.log(f"accuracy ({loader_name})", acc, on_epoch=True)
@@ -95,7 +101,6 @@ def main(cfg : DictConfig) -> None:
     torch.set_float32_matmul_precision('medium')
 
     dataset = get_dataset("camelyon17", root_dir="../data")
-    domain_mapper = DomainMapper(dataset.metadata_array[:,0])
     grouper = CombinatorialGrouper(dataset, ['hospital'])
 
     transform = T.Compose([
@@ -106,13 +111,22 @@ def main(cfg : DictConfig) -> None:
     val_set_id = dataset.get_subset("id_val", transform=transform)
     val_set_ood = dataset.get_subset("val", transform=transform)
 
-    trainer = pl.Trainer(accelerator="auto", max_epochs=cfg.max_epochs, logger=logger)
+    domain_mapper = DomainMapper(train_set.metadata_array[:,0])
+
+    trainer = pl.Trainer(
+        accelerator="auto", 
+        max_epochs=cfg.max_epochs, 
+        logger=logger,
+    )
 
     trainer.fit(
         DPSmol(
             lr=cfg.param.lr, 
             weight_decay=cfg.param.weight_decay, 
-            momentum=cfg.param.momentum
+            momentum=cfg.param.momentum,
+            grouper=grouper,
+            alpha=cfg.disc.alpha,
+            domain_mapper=domain_mapper
         ),
         train_dataloaders=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
         val_dataloaders=[
