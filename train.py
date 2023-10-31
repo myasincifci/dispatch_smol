@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-import datetime
+import time
 import hydra
 import pytorch_lightning as pl
 import torch
@@ -99,7 +99,7 @@ def main(cfg : DictConfig) -> None:
                 "dataset": "camelyon17",
             },
 
-            id=f"{cfg.name}: {datetime.datetime.now()}"
+            id=f"{cfg.name}-{time.time()}"
         )
         logger = WandbLogger()
 
