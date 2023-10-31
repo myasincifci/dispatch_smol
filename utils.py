@@ -1,4 +1,4 @@
-from typing import Iterator, List, Dict
+from typing import Iterator, List, Dict, OrderedDict
 
 import torch
 from torch.utils.data import Sampler
@@ -35,3 +35,11 @@ class DomainMapper():
     
     def unmap(self, x: torch.Tensor) -> torch.Tensor:
         return torch.tensor([self.unmap_dict[v.item()] for v in x])
+    
+def get_backbone_from_ckpt(ckpt_path: str) -> torch.nn.Module:
+    state_dict = torch.load(ckpt_path)["state_dict"]
+    state_dict = OrderedDict([
+        (".".join(name.split(".")[1:]), param) for name, param in state_dict.items() if name.startswith("backbone")
+    ])
+
+    return state_dict

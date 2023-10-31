@@ -1,9 +1,11 @@
-logging: False
-max_epochs: 5
+name: Base
+logging: True
+max_epochs: 10
 param:
     lr: 1e-3
     weight_decay: 1e-2
     momentum: 0.9
     batch_size: 32
 disc:
-    alpha: 0.8
+    alpha: 0.0
+weights: scratch

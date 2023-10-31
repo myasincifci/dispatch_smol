@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+name: DANN
+disc:
+    alpha: 0.8

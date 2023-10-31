@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+import datetime
 import hydra
 import pytorch_lightning as pl
 import torch
@@ -22,12 +23,10 @@ from utils import DomainMapper
 
 
 class DPSmol(pl.LightningModule):
-    def __init__(self, grouper, alpha, domain_mapper, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, grouper, alpha, domain_mapper, weights, *args: Any, **kwargs: Any) -> None:
         super().__init__()
-
-        # self.model = densenet121(num_classes=2)
-        # self.criterion = torch.nn.CrossEntropyLoss()
-        self.model = DANN(alpha=alpha)
+        
+        self.model = DANN(alpha=alpha, weights=weights)
 
         self.metric = Accuracy("binary")
 
@@ -98,7 +97,9 @@ def main(cfg : DictConfig) -> None:
 
                 "architecture": "ResNet 50",
                 "dataset": "camelyon17",
-            }
+            },
+
+            id=f"{cfg.name}: {datetime.datetime.now()}"
         )
         logger = WandbLogger()
 
@@ -132,7 +133,8 @@ def main(cfg : DictConfig) -> None:
             momentum=cfg.param.momentum,
             grouper=grouper,
             alpha=cfg.disc.alpha,
-            domain_mapper=domain_mapper
+            domain_mapper=domain_mapper,
+            weights=cfg.weights
         ),
         train_dataloaders=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
         val_dataloaders=[
