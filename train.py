@@ -121,7 +121,7 @@ def main(cfg : DictConfig) -> None:
     domain_mapper = DomainMapper(train_set.metadata_array[:,0])
 
     callback = ModelCheckpoint(
-        monitor="accuracy val (ID)"
+        monitor="accuracy val (ID)/dataloader_idx_0"
     )
 
     trainer = pl.Trainer(
