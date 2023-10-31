@@ -1,5 +1,5 @@
 name: Base
-logging: True
+logging: False
 max_epochs: 10
 param:
     lr: 1e-3

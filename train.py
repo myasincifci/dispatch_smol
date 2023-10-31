@@ -61,7 +61,7 @@ class DPSmol(pl.LightningModule):
 
         acc = self.metric(y.argmax(dim=1), t)
 
-        self.log(f"accuracy ({loader_name})", acc, on_epoch=True)
+        self.log(f"accuracy {loader_name}", acc, on_epoch=True)
         
         return loss 
     
@@ -120,10 +120,15 @@ def main(cfg : DictConfig) -> None:
 
     domain_mapper = DomainMapper(train_set.metadata_array[:,0])
 
+    callback = ModelCheckpoint(
+        monitor="accuracy val (ID)"
+    )
+
     trainer = pl.Trainer(
         accelerator="auto", 
         max_epochs=cfg.max_epochs, 
         logger=logger,
+        callbacks=[callback]
     )
 
     trainer.fit(
@@ -143,6 +148,8 @@ def main(cfg : DictConfig) -> None:
                 get_eval_loader("standard", val_set_ood, batch_size=cfg.param.batch_size, num_workers=4)
         ]
     )
+
+    
 
 if __name__ == "__main__":
     main()
