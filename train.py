@@ -80,8 +80,8 @@ class DPSmol(pl.LightningModule):
 
         return optimizer
     
-    def compute_embeddings(self, train_loader: DataLoader, val_loader: DataLoader):
-        hf = h5py.File('embeddings.h5', 'w')
+    def compute_embeddings(self, name:str, train_loader: DataLoader, val_loader: DataLoader):
+        hf = h5py.File(f'{name}-embeddings.h5', 'w')
         hf.create_dataset("train_embeddings", shape=(len(train_loader.dataset), 2048))
         hf.create_dataset("train_domains", shape=(len(train_loader.dataset)))
         hf.create_dataset("val_embeddings", shape=(len(val_loader.dataset), 2048))
@@ -148,10 +148,10 @@ def main(cfg : DictConfig) -> None:
         T.ToTensor()
     ])
 
-    train_set = dataset.get_subset("train", transform=transform, frac=0.01)
-    val_set_id = dataset.get_subset("id_val", transform=transform, frac=0.01)
-    val_set_ood = dataset.get_subset("val", transform=transform, frac=0.01)
-    test_set = dataset.get_subset("test", transform=transform, frac=0.01)
+    train_set = dataset.get_subset("train", transform=transform)
+    val_set_id = dataset.get_subset("id_val", transform=transform)
+    val_set_ood = dataset.get_subset("val", transform=transform)
+    test_set = dataset.get_subset("test", transform=transform)
 
     domain_mapper = DomainMapper(train_set.metadata_array[:,0])
 
@@ -189,6 +189,7 @@ def main(cfg : DictConfig) -> None:
     model = DPSmol.load_from_checkpoint(callback.best_model_path)
 
     model.compute_embeddings(
+        name=f"{cfg.name}-{time.time()}",
         train_loader=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
         val_loader=get_eval_loader("standard", val_set_id, batch_size=cfg.param.batch_size, num_workers=4),
     )
