@@ -49,8 +49,13 @@ class DPSmol(pl.LightningModule):
 
         return loss_pred + loss_disc
     
-    def validation_step(self, batch, batch_idx, dataloader_idx) -> STEP_OUTPUT | None:
-        loader_name = "ID" if dataloader_idx == 0 else "OOD"
+    def validation_step(self, batch, batch_idx, dataloader_idx) -> STEP_OUTPUT:
+        if dataloader_idx == 0:
+            loader_name = "val (ID)" 
+        elif dataloader_idx == 1: 
+            loader_name = "val (OOD)"
+        else:
+            loader_name = "test"
 
         X, t, M = batch 
         y, loss = self.model.forward_pred(X, t)
@@ -110,6 +115,7 @@ def main(cfg : DictConfig) -> None:
     train_set = dataset.get_subset("train", transform=transform)
     val_set_id = dataset.get_subset("id_val", transform=transform)
     val_set_ood = dataset.get_subset("val", transform=transform)
+    test_set = dataset.get_subset("test", transform=transform)
 
     domain_mapper = DomainMapper(train_set.metadata_array[:,0])
 
@@ -131,6 +137,7 @@ def main(cfg : DictConfig) -> None:
         train_dataloaders=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
         val_dataloaders=[
                 get_eval_loader("standard", val_set_id, batch_size=cfg.param.batch_size, num_workers=4),
+                get_eval_loader("standard", val_set_ood, batch_size=cfg.param.batch_size, num_workers=4),
                 get_eval_loader("standard", val_set_ood, batch_size=cfg.param.batch_size, num_workers=4)
         ]
     )
