@@ -4,6 +4,7 @@ import time
 import hydra
 import pytorch_lightning as pl
 import torch
+from torch.utils.data import DataLoader
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
@@ -21,10 +22,14 @@ import wandb
 from models import DANN
 from utils import DomainMapper
 
+from tqdm import tqdm
+import h5py
+
 
 class DPSmol(pl.LightningModule):
     def __init__(self, grouper, alpha, domain_mapper, weights, *args: Any, **kwargs: Any) -> None:
         super().__init__()
+        self.save_hyperparameters()
         
         self.model = DANN(alpha=alpha, weights=weights)
 
@@ -74,9 +79,39 @@ class DPSmol(pl.LightningModule):
         )
 
         return optimizer
+    
+    def compute_embeddings(self, train_loader: DataLoader, val_loader: DataLoader):
+        hf = h5py.File('embeddings.h5', 'w')
+        hf.create_dataset("train_embeddings", shape=(len(train_loader.dataset), 2048))
+        hf.create_dataset("train_domains", shape=(len(train_loader.dataset)))
+        hf.create_dataset("val_embeddings", shape=(len(val_loader.dataset), 2048))
+        hf.create_dataset("val_domains", shape=(len(val_loader.dataset)))
+
+        with torch.no_grad():
+
+            for i, batch in enumerate(tqdm(train_loader)):
+                x, t, m = batch
+                bs = len(x)
+                d = self.domain_mapper(self.grouper.metadata_to_group(m))
+
+                y = self.model.embed(x.cuda()).squeeze()
+                hf["train_embeddings"][i*32:i*32+bs] = y.cpu()
+                hf["train_domains"][i*32:i*32+bs] = d
+
+            for i, batch in enumerate(tqdm(val_loader)):
+                x, t, m = batch
+                bs = len(x)
+                d = self.domain_mapper(self.grouper.metadata_to_group(m))
+
+                y = self.model.embed(x.cuda()).squeeze()
+                hf["val_embeddings"][i*32:i*32+bs] = y.cpu()
+                hf["val_domains"][i*32:i*32+bs] = d
+
+        hf.close()
 
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg : DictConfig) -> None:
+    
     print(OmegaConf.to_yaml(cfg))
     logger = True
     if cfg.logging:
@@ -113,15 +148,16 @@ def main(cfg : DictConfig) -> None:
         T.ToTensor()
     ])
 
-    train_set = dataset.get_subset("train", transform=transform)
-    val_set_id = dataset.get_subset("id_val", transform=transform)
-    val_set_ood = dataset.get_subset("val", transform=transform)
-    test_set = dataset.get_subset("test", transform=transform)
+    train_set = dataset.get_subset("train", transform=transform, frac=0.01)
+    val_set_id = dataset.get_subset("id_val", transform=transform, frac=0.01)
+    val_set_ood = dataset.get_subset("val", transform=transform, frac=0.01)
+    test_set = dataset.get_subset("test", transform=transform, frac=0.01)
 
     domain_mapper = DomainMapper(train_set.metadata_array[:,0])
 
     callback = ModelCheckpoint(
-        monitor="accuracy val (ID)/dataloader_idx_0"
+        monitor="accuracy val (ID)/dataloader_idx_0",
+        save_top_k=1,
     )
 
     trainer = pl.Trainer(
@@ -131,25 +167,31 @@ def main(cfg : DictConfig) -> None:
         callbacks=[callback]
     )
 
+    model = DPSmol(
+        lr=cfg.param.lr, 
+        weight_decay=cfg.param.weight_decay, 
+        momentum=cfg.param.momentum,
+        grouper=grouper,
+        alpha=cfg.disc.alpha,
+        domain_mapper=domain_mapper,
+        weights=cfg.weights
+    )
     trainer.fit(
-        DPSmol(
-            lr=cfg.param.lr, 
-            weight_decay=cfg.param.weight_decay, 
-            momentum=cfg.param.momentum,
-            grouper=grouper,
-            alpha=cfg.disc.alpha,
-            domain_mapper=domain_mapper,
-            weights=cfg.weights
-        ),
+        model,
         train_dataloaders=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
         val_dataloaders=[
                 get_eval_loader("standard", val_set_id, batch_size=cfg.param.batch_size, num_workers=4),
                 get_eval_loader("standard", val_set_ood, batch_size=cfg.param.batch_size, num_workers=4),
-                get_eval_loader("standard", val_set_ood, batch_size=cfg.param.batch_size, num_workers=4)
+                get_eval_loader("standard", test_set, batch_size=cfg.param.batch_size, num_workers=4)
         ]
     )
 
-    
+    model = DPSmol.load_from_checkpoint(callback.best_model_path)
+
+    model.compute_embeddings(
+        train_loader=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
+        val_loader=get_eval_loader("standard", val_set_id, batch_size=cfg.param.batch_size, num_workers=4),
+    )
 
 if __name__ == "__main__":
     main()

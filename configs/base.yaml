@@ -1,6 +1,6 @@
 name: Base
-logging: True
-max_epochs: 10
+logging: False
+max_epochs: 1
 param:
     lr: 1e-3
     weight_decay: 1e-2

@@ -50,6 +50,13 @@ class DANN(nn.Module):
 
         return y, loss
     
+    @torch.no_grad()
+    def embed(self, x):
+        for l in list(self.backbone.children())[:-1]:
+            x = l(x)
+
+        return x
+    
     def _make_backbone(self, weights):
         if weights == "scratch":
             backbone = resnet50(num_classes=2)
@@ -66,4 +73,7 @@ class DANN(nn.Module):
 
     
 if __name__ == "__main__":
-    model = DANN()
+    model = DANN(weights="scratch")
+
+    out = model.embed(torch.rand((32, 3, 96, 96)))
+    print(out.shape)
