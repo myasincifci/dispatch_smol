@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+name: Barlow Twins
+weights: ../dispatch/lightning_logs/version_8/checkpoints/epoch=25-step=45050.ckpt
+freeze: [1,2,3]
