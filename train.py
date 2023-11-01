@@ -81,6 +81,8 @@ class DPSmol(pl.LightningModule):
             prms += (list(self.model.backbone.layer3.parameters()))
         if 4 not in self.freeze:
             prms += (list(self.model.backbone.layer4.parameters()))
+        if 5 not in self.freeze:
+            prms += (list(self.model.backbone.fc.parameters()))
 
         optimizer = optim.SGD(
             prms, 
