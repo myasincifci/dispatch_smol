@@ -2,4 +2,4 @@ defaults:
   - base
 
 name: Barlow Twins
-weights: ./model_zoo/bt.ckpt
+weights: ../dispatch/lightning_logs/version_8/checkpoints/epoch=25-step=45050.ckpt
