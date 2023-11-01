@@ -27,7 +27,7 @@ import h5py
 
 
 class DPSmol(pl.LightningModule):
-    def __init__(self, grouper, alpha, domain_mapper, weights, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, grouper, alpha, domain_mapper, weights, freeze, *args: Any, **kwargs: Any) -> None:
         super().__init__()
         self.save_hyperparameters()
         
@@ -41,6 +41,7 @@ class DPSmol(pl.LightningModule):
 
         self.grouper: CombinatorialGrouper = grouper
         self.domain_mapper = domain_mapper
+        self.freeze = list(freeze)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         X, t, M = batch
@@ -71,8 +72,18 @@ class DPSmol(pl.LightningModule):
         return loss 
     
     def configure_optimizers(self) -> Any:
+        prms = []
+        if 1 not in self.freeze:
+            prms += (list(self.model.backbone.layer1.parameters()))
+        if 2 not in self.freeze:
+            prms += (list(self.model.backbone.layer2.parameters()))
+        if 3 not in self.freeze:
+            prms += (list(self.model.backbone.layer3.parameters()))
+        if 4 not in self.freeze:
+            prms += (list(self.model.backbone.layer4.parameters()))
+
         optimizer = optim.SGD(
-            self.model.parameters(), 
+            prms, 
             lr=self.lr,
             weight_decay=self.weight_decay, 
             momentum=self.momentum
@@ -174,7 +185,8 @@ def main(cfg : DictConfig) -> None:
         grouper=grouper,
         alpha=cfg.disc.alpha,
         domain_mapper=domain_mapper,
-        weights=cfg.weights
+        weights=cfg.weights,
+        freeze=cfg.freeze
     )
     trainer.fit(
         model,

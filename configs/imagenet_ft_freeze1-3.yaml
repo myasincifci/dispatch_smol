@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+name: ImageNet Init
+weights: ImageNet
+freeze: [1,2,3]
