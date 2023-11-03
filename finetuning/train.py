@@ -45,7 +45,7 @@ class DPSmol(pl.LightningModule):
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         X, t, M = batch
-        d = self.domain_mapper(self.grouper.metadata_to_group(M.cpu())).cuda()
+        d = self.domain_mapper(self.grouper.metadata_to_group(M.cpu())).to(self.device)
 
         loss_pred, loss_disc = self.model(X, t, d)
 
