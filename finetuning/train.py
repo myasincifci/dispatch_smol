@@ -156,7 +156,7 @@ def main(cfg : DictConfig) -> None:
     ############################################################################
     torch.set_float32_matmul_precision('medium')
 
-    dataset = get_dataset("camelyon17", root_dir="/data")
+    dataset = get_dataset("camelyon17", root_dir=cfg.data_root)
     grouper = CombinatorialGrouper(dataset, ['hospital'])
 
     transform = T.Compose([
