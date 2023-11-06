@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+name: Scratch
+disc:
+    alpha: 0.0
