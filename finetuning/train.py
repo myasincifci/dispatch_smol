@@ -136,7 +136,7 @@ def main(cfg : DictConfig) -> None:
         )
         wandb.init(
             # set the wandb project where this run will be logged
-            project="wild-finetuning",
+            project="wilds-finetuning",
             
             # track hyperparameters and run metadata
             config={
