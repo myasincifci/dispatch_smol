@@ -1,0 +1,11 @@
+name: Base
+logging: True
+max_epochs: 10
+data_path: /data
+unlabeled: True
+param:
+    lr: 5e-4
+    batch_size: 1_024
+disc:
+    alpha: 1.0
+weights: scratch
