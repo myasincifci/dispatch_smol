@@ -1,5 +1,5 @@
 defaults:
   - base
 
-name: ImageNet Init
+name: ImageNet
 weights: ImageNet

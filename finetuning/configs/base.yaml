@@ -9,4 +9,5 @@ param:
 disc:
     alpha: 0.0
 weights: scratch
-data_root: ../../data
+freeze: []
+data_root: /data

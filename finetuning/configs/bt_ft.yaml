@@ -2,4 +2,4 @@ defaults:
   - base
 
 name: Barlow Twins
-weights: ../dispatch/lightning_logs/version_8/checkpoints/epoch=25-step=45050.ckpt
+weights: ../dispatch/lightning_logs/version_7/checkpoints/epoch=25-step=45050.ckpt
