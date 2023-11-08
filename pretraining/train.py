@@ -27,8 +27,10 @@ from torchvision.models.resnet import ResNet50_Weights, resnet50
 from wilds import get_dataset
 from wilds.common.grouper import CombinatorialGrouper
 
-import wandb
+from pytorch_lightning.loggers import WandbLogger
+from utils import DomainMapper
 
+# import wandb
 
 class ReverseLayerF(Function):
     @staticmethod
@@ -44,14 +46,14 @@ class ReverseLayerF(Function):
         return output, None
 
 class BarlowTwins(L.LightningModule):
-    def __init__(self, lr, backbone, knn_loader, grouper, alpha, dom_crit=True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, lr, backbone, knn_loader, grouper, alpha, domain_mapper, cfg, dom_crit=True, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
-        self.projection_head = BarlowTwinsProjectionHead(2048, 8192, 8192)
+        self.projection_head = BarlowTwinsProjectionHead(2048, cfg.param.projector_dim, cfg.param.projector_dim)
 
         if dom_crit:
-            self.crit_clf = nn.Linear(2048, 5)
+            self.crit_clf = nn.Linear(2048, 3)
             self.crit_crit = nn.NLLLoss()
 
         self.criterion = BarlowTwinsLoss()
@@ -63,10 +65,15 @@ class BarlowTwins(L.LightningModule):
         self.knn_t = 0.1
 
         self.dom_crit = dom_crit
+        self.domain_mapper = domain_mapper
         self.grouper = grouper
+        self.cfg = cfg
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        (x0, x1), metadata = batch
+        if self.cfg.unlabeled:
+            (x0, x1), metadata = batch
+        else:
+            (x0, x1), t, metadata = batch
         bs = x0.shape[0]
 
         z0, z1 = self.backbone(x0).view(bs, -1), self.backbone(x1).view(bs, -1)
@@ -78,6 +85,7 @@ class BarlowTwins(L.LightningModule):
             z = torch.cat([z0, z1])
             group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
             group = torch.cat([group, group])
+            group = self.domain_mapper(group)
 
             z = ReverseLayerF.apply(z, 1.0)
 
@@ -85,9 +93,11 @@ class BarlowTwins(L.LightningModule):
 
             crit_loss = self.crit_crit(q, group)
 
-            wandb.log({"crit-loss": crit_loss.item()})
+            # wandb.log({"crit-loss": crit_loss.item()})
+            self.log("crit-loss", crit_loss.item(), prog_bar=True)
 
-        wandb.log({"bt-loss": clf_loss.item()})
+        # wandb.log({"bt-loss": clf_loss.item()})
+        self.log("bt-loss", clf_loss.item(), prog_bar=True)
 
         return clf_loss + crit_loss*15.0
 
@@ -159,8 +169,8 @@ class BarlowTwins(L.LightningModule):
             acc = top1 / len(targets)
             if acc > self.max_accuracy:
                 self.max_accuracy = acc.item()
-            # self.log("kNN_accuracy", acc * 100.0, prog_bar=True)
-            wandb.log({"kNN_accuracy": acc * 100.0})
+            self.log("kNN_accuracy", acc * 100.0, prog_bar=True)
+            # wandb.log({"kNN_accuracy": acc * 100.0})
 
         self._val_predicted_labels.clear()
         self._val_targets.clear()
@@ -191,6 +201,7 @@ def main(cfg : DictConfig) -> None:
                 "dataset": "camelyon17",
             }
         )
+        logger = WandbLogger()
 
     L.seed_everything(42)
 
@@ -239,7 +250,7 @@ def main(cfg : DictConfig) -> None:
     # Dataloaders
     train_loader = torch.utils.data.DataLoader(
         train_set,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
         num_workers=4,
@@ -247,7 +258,7 @@ def main(cfg : DictConfig) -> None:
 
     train_loader_knn = torch.utils.data.DataLoader(
         train_set_knn,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
         num_workers=4,
@@ -255,7 +266,7 @@ def main(cfg : DictConfig) -> None:
 
     val_loader_knn = torch.utils.data.DataLoader(
         val_set_knn,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
         num_workers=4,
@@ -264,13 +275,16 @@ def main(cfg : DictConfig) -> None:
     # Model
     backbone = resnet50(ResNet50_Weights.IMAGENET1K_V2)
     backbone.fc = nn.Identity()
+    domain_mapper = DomainMapper(train_set_labeled.metadata_array[:,0])
 
     barlow_twins = BarlowTwins(
         lr=cfg.param.lr, backbone=backbone, 
         knn_loader=train_loader_knn, 
         grouper=grouper,
         alpha=cfg.disc.alpha,
-        dom_crit=False
+        dom_crit=False,
+        domain_mapper=domain_mapper,
+        cfg=cfg
     )
 
     trainer = L.Trainer(max_steps=25_000, accelerator="auto", val_check_interval=100)
