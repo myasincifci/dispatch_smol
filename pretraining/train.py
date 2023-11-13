@@ -287,7 +287,12 @@ def main(cfg : DictConfig) -> None:
         cfg=cfg
     )
 
-    trainer = L.Trainer(max_steps=25_000, accelerator="auto", val_check_interval=100)
+    trainer = L.Trainer(
+        max_steps=25_000, 
+        accelerator="auto", 
+        val_check_interval=100,
+        logger=logger
+    )
     trainer.fit(
         model=barlow_twins, 
         train_dataloaders=train_loader,
