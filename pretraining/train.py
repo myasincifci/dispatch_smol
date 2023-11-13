@@ -30,7 +30,7 @@ from wilds.common.grouper import CombinatorialGrouper
 from pytorch_lightning.loggers import WandbLogger
 from utils import DomainMapper
 
-# import wandb
+import wandb
 
 class ReverseLayerF(Function):
     @staticmethod
