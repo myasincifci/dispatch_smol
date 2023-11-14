@@ -9,4 +9,7 @@ param:
     projector_dim: 128
 disc:
     alpha: 1.0
-weights: scratch
+weights: scratch # TODO: use in train.py
+dataset:
+    name: iwildcam
+    version: 1.0

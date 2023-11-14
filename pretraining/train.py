@@ -198,7 +198,7 @@ def main(cfg : DictConfig) -> None:
                 "learning_rate": cfg.param.lr,
                 "batch_size": cfg.param.batch_size,
                 "architecture": "ResNet 50",
-                "dataset": "camelyon17",
+                "dataset": cfg.dataset,
             }
         )
         logger = WandbLogger()
@@ -225,13 +225,13 @@ def main(cfg : DictConfig) -> None:
 
 
     # Datasets
-    labeled_dataset = get_dataset(dataset="camelyon17",
+    labeled_dataset = get_dataset(dataset=cfg.dataset.name, version=str(cfg.dataset.version),
                           download=True, root_dir=cfg.data_path, unlabeled=False)   
 
     train_set_labeled = labeled_dataset.get_subset("train", transform=train_transform)
 
     if cfg.unlabeled:
-        unlabeled_dataset = get_dataset(dataset="camelyon17",
+        unlabeled_dataset = get_dataset(dataset=cfg.dataset,
                           download=True, root_dir=cfg.data_path, unlabeled=True) 
         train_set = unlabeled_dataset.get_subset("train_unlabeled", transform=train_transform)
     else:
