@@ -12,4 +12,4 @@ disc:
 weights: scratch # TODO: use in train.py
 dataset:
     name: iwildcam
-    version: 1.0
+    version: 2.0

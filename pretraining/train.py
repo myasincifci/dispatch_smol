@@ -209,13 +209,16 @@ def main(cfg : DictConfig) -> None:
     train_transform = BYOLTransform(
         view_1_transform=T.Compose([
             BYOLView1Transform(input_size=96, gaussian_blur=0.0),
+            T.Resize((448,448)),
         ]),
         view_2_transform=T.Compose([
             BYOLView2Transform(input_size=96, gaussian_blur=0.0),
+            T.Resize((448,448)),
         ])
     )
 
     val_transform = T.Compose([
+        T.Resize((448,448)),
         T.ToTensor(),
         T.Normalize(
             mean=IMAGENET_NORMALIZE["mean"],
@@ -225,7 +228,7 @@ def main(cfg : DictConfig) -> None:
 
 
     # Datasets
-    labeled_dataset = get_dataset(dataset=cfg.dataset.name, version=str(cfg.dataset.version),
+    labeled_dataset = get_dataset(dataset=cfg.dataset.name, version=cfg.dataset.version,
                           download=True, root_dir=cfg.data_path, unlabeled=False)   
 
     train_set_labeled = labeled_dataset.get_subset("train", transform=train_transform)
@@ -253,7 +256,7 @@ def main(cfg : DictConfig) -> None:
         batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=4,
+        num_workers=0,
     )
 
     train_loader_knn = torch.utils.data.DataLoader(
@@ -261,7 +264,7 @@ def main(cfg : DictConfig) -> None:
         batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=4,
+        num_workers=0,
     )
 
     val_loader_knn = torch.utils.data.DataLoader(
@@ -269,7 +272,7 @@ def main(cfg : DictConfig) -> None:
         batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=4,
+        num_workers=0,
     )
 
     # Model
