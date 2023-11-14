@@ -1,3 +1,6 @@
 defaults:
   - base
 
+dataset:
+    name: iwildcam
+    version: 1.0

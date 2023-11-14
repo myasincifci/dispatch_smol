@@ -198,7 +198,7 @@ def main(cfg : DictConfig) -> None:
                 "learning_rate": cfg.param.lr,
                 "batch_size": cfg.param.batch_size,
                 "architecture": "ResNet 50",
-                "dataset": cfg.dataset,
+                "dataset": cfg.dataset.name,
             }
         )
         logger = WandbLogger()
@@ -231,9 +231,9 @@ def main(cfg : DictConfig) -> None:
     train_set_labeled = labeled_dataset.get_subset("train", transform=train_transform)
 
     if cfg.unlabeled:
-        unlabeled_dataset = get_dataset(dataset=cfg.dataset,
+        unlabeled_dataset = get_dataset(dataset=cfg.dataset.name,
                           download=True, root_dir=cfg.data_path, unlabeled=True) 
-        train_set = unlabeled_dataset.get_subset("train_unlabeled", transform=train_transform)
+        train_set = unlabeled_dataset.get_subset("extra_unlabeled", transform=train_transform) # TODO: add split name to config
     else:
         train_set = train_set_labeled
 
@@ -245,7 +245,7 @@ def main(cfg : DictConfig) -> None:
     val_set_knn = labeled_dataset.get_subset(
         "val", frac=1024/len(val_set), transform=val_transform)
     
-    grouper = CombinatorialGrouper(labeled_dataset, ['hospital'])
+    grouper = CombinatorialGrouper(labeled_dataset, ['location'])
 
     # Dataloaders
     train_loader = torch.utils.data.DataLoader(
