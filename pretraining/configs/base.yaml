@@ -1,11 +1,11 @@
 name: Base
 logging: True
-max_epochs: 10
+max_epochs: 30
 data_path: /data
 unlabeled: True
 param:
     lr: 5e-4
-    batch_size: 512
+    batch_size: 256
     projector_dim: 8192
 disc:
     alpha: 1.0

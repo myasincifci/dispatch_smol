@@ -60,7 +60,7 @@ class BarlowTwins(L.LightningModule):
         self.lr = lr
         self.dataloader_kNN = knn_loader
 
-        self.num_classes = 2
+        self.num_classes = 182
         self.knn_k = 200
         self.knn_t = 0.1
 
@@ -209,16 +209,16 @@ def main(cfg : DictConfig) -> None:
     train_transform = BYOLTransform(
         view_1_transform=T.Compose([
             BYOLView1Transform(input_size=96, gaussian_blur=0.0),
-            T.Resize((448,448)),
+            T.Resize((256,256), antialias=True),
         ]),
         view_2_transform=T.Compose([
             BYOLView2Transform(input_size=96, gaussian_blur=0.0),
-            T.Resize((448,448)),
+            T.Resize((256,256), antialias=True),
         ])
     )
 
     val_transform = T.Compose([
-        T.Resize((448,448)),
+        T.Resize((256,256), antialias=True),
         T.ToTensor(),
         T.Normalize(
             mean=IMAGENET_NORMALIZE["mean"],
@@ -256,7 +256,7 @@ def main(cfg : DictConfig) -> None:
         batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=0,
+        num_workers=4,
     )
 
     train_loader_knn = torch.utils.data.DataLoader(
@@ -264,7 +264,7 @@ def main(cfg : DictConfig) -> None:
         batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=0,
+        num_workers=4,
     )
 
     val_loader_knn = torch.utils.data.DataLoader(
@@ -272,7 +272,7 @@ def main(cfg : DictConfig) -> None:
         batch_size=cfg.param.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=0,
+        num_workers=4,
     )
 
     # Model
@@ -291,9 +291,9 @@ def main(cfg : DictConfig) -> None:
     )
 
     trainer = L.Trainer(
-        max_steps=25_000, 
+        max_epochs=cfg.max_epochs, 
         accelerator="auto", 
-        val_check_interval=100,
+        val_check_interval=1000,
         logger=logger
     )
     trainer.fit(
