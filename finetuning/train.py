@@ -12,11 +12,10 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import nn, optim
 from torchmetrics import Accuracy
 from torchvision import transforms as T
-from torchvision.models.densenet import densenet121
-from torchvision.models.resnet import resnet18
 from wilds import get_dataset
 from wilds.common.data_loaders import get_eval_loader, get_train_loader
 from wilds.common.grouper import CombinatorialGrouper
+from wilds.datasets.wilds_dataset import WILDSSubset, WILDSDataset
 
 import wandb
 from models import DANN
@@ -25,6 +24,13 @@ from utils import DomainMapper
 from tqdm import tqdm
 import h5py
 
+def get_full_dataloader(dataset: WILDSDataset, batch_size, transform) -> WILDSSubset:
+    """Returns a dataloader for the complete dataset"""
+
+    num_samples = len(dataset)
+    subset = WILDSSubset(dataset, indices=list(range(num_samples)), transform=transform)
+
+    return get_eval_loader("standard", subset, batch_size, num_workers=4)
 
 class DPSmol(pl.LightningModule):
     def __init__(self, grouper, alpha, domain_mapper, weights, freeze, *args: Any, **kwargs: Any) -> None:
@@ -124,6 +130,26 @@ class DPSmol(pl.LightningModule):
 
         hf.close()
 
+    def compute_all_embeddings(self, name:str, dataloader: DataLoader):
+        hf = h5py.File(f'{name}-all-embeddings.h5', 'w')
+        hf.create_dataset("embeddings", shape=(len(dataloader.dataset), 2048))
+        hf.create_dataset("labels", shape=(len(dataloader.dataset)))
+        hf.create_dataset("domains", shape=(len(dataloader.dataset)))
+
+        with torch.no_grad():
+
+            for i, batch in enumerate(tqdm(dataloader)):
+                x, t, m = batch
+                bs = len(x)
+                d = self.domain_mapper(self.grouper.metadata_to_group(m))
+
+                y = self.model.embed(x.cuda()).squeeze()
+                hf["embeddings"][i*32:i*32+bs] = y.cpu()
+                hf["labels"][i*32:i*32+bs] = t
+                hf["domains"][i*32:i*32+bs] = d
+
+        hf.close()
+
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg : DictConfig) -> None:
     
@@ -204,10 +230,9 @@ def main(cfg : DictConfig) -> None:
 
     model = DPSmol.load_from_checkpoint(callback.best_model_path)
 
-    model.compute_embeddings(
+    model.compute_all_embeddings(
         name=f"{cfg.name}-{time.time()}",
-        train_loader=get_train_loader("standard", train_set, batch_size=cfg.param.batch_size, num_workers=4),
-        val_loader=get_eval_loader("standard", val_set_id, batch_size=cfg.param.batch_size, num_workers=4),
+        train_loader=get_full_dataloader(dataset, batch_size=cfg.param.batch_size, transform=transform),
     )
 
 if __name__ == "__main__":
