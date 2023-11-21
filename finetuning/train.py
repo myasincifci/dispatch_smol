@@ -130,7 +130,7 @@ class DPSmol(pl.LightningModule):
 
         hf.close()
 
-    def compute_all_embeddings(self, name:str, dataloader: DataLoader):
+    def compute_all_embeddings(self, name:str, dataloader: DataLoader, dm):
         hf = h5py.File(f'{name}-all-embeddings.h5', 'w')
         hf.create_dataset("embeddings", shape=(len(dataloader.dataset), 2048))
         hf.create_dataset("labels", shape=(len(dataloader.dataset)))
@@ -141,7 +141,7 @@ class DPSmol(pl.LightningModule):
             for i, batch in enumerate(tqdm(dataloader)):
                 x, t, m = batch
                 bs = len(x)
-                d = self.domain_mapper(self.grouper.metadata_to_group(m))
+                d = dm(self.grouper.metadata_to_group(m))
 
                 y = self.model.embed(x.cuda()).squeeze()
 
@@ -231,9 +231,12 @@ def main(cfg : DictConfig) -> None:
 
     model = DPSmol.load_from_checkpoint(callback.best_model_path)
 
+    domain_mapper_2 = DomainMapper(dataset.metadata_array[:,0])
+
     model.compute_all_embeddings(
         name=f"{cfg.name}-{time.time()}",
         dataloader=get_full_dataloader(dataset, batch_size=cfg.param.batch_size, transform=transform),
+        dm=domain_mapper
     )
 
 if __name__ == "__main__":
