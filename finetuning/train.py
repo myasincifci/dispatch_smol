@@ -144,9 +144,10 @@ class DPSmol(pl.LightningModule):
                 d = self.domain_mapper(self.grouper.metadata_to_group(m))
 
                 y = self.model.embed(x.cuda()).squeeze()
-                hf["embeddings"][i*32:i*32+bs] = y.cpu()
-                hf["labels"][i*32:i*32+bs] = t
-                hf["domains"][i*32:i*32+bs] = d
+
+                hf["embeddings"][i*bs:(i+1)*bs] = y.cpu()
+                hf["labels"][i*bs:(i+1)*bs] = t
+                hf["domains"][i*bs:(i+1)*bs] = d
 
         hf.close()
 

@@ -13,3 +13,5 @@
 /pretraining/logs
 /pretraining/outputs
 /pretraining/model_zoo
+
+/data
