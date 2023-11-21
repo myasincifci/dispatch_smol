@@ -13,4 +13,4 @@ apptainer run --nv -B /tmp/camelyon17_v1.0.sqfs:/data/camelyon17_v1.0:image-src=
     python \
         train.py \
             --config-name scratch \
-            'max_epochs=0'
+            'max_epochs=1'
