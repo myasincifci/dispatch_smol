@@ -1,5 +1,7 @@
 /__pycache__
 
+/*/lightning_logs
+
 /finetuning/__pycache__
 /finetuning/lightning_logs
 /finetuning/wandb
