@@ -69,8 +69,6 @@ class DANN(nn.Module):
             print("missing:", missing_keys, "unexpected:", unexpected_keys)
 
         return backbone
-        
-
     
 if __name__ == "__main__":
     model = DANN(weights="scratch")
