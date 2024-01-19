@@ -46,15 +46,15 @@ class ReverseLayerF(Function):
         return output, None
 
 class BarlowTwins(L.LightningModule):
-    def __init__(self, lr, backbone, knn_loader, grouper, alpha, domain_mapper, cfg, dom_crit=True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, lr, backbone, knn_loader, grouper, alpha, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
         self.projection_head = BarlowTwinsProjectionHead(2048, cfg.param.projector_dim, cfg.param.projector_dim)
 
-        if dom_crit:
+        if alpha > 0.0:
             self.crit_clf = nn.Linear(2048, 3)
-            self.crit_crit = nn.NLLLoss()
+            self.crit_crit = nn.CrossEntropyLoss()
 
         self.criterion = BarlowTwinsLoss()
         self.lr = lr
@@ -64,7 +64,6 @@ class BarlowTwins(L.LightningModule):
         self.knn_k = 200
         self.knn_t = 0.1
 
-        self.dom_crit = dom_crit
         self.domain_mapper = domain_mapper
         self.grouper = grouper
         self.cfg = cfg
@@ -73,15 +72,15 @@ class BarlowTwins(L.LightningModule):
         if self.cfg.unlabeled:
             (x0, x1), metadata = batch
         else:
-            (x0, x1), t, metadata = batch
-        bs = x0.shape[0]
+            (x0, x1), _, metadata = batch
 
-        z0, z1 = self.backbone(x0).view(bs, -1), self.backbone(x1).view(bs, -1)
+        z0, z1 = self.backbone(x0).flatten(start_dim=1), self.backbone(x1).flatten(start_dim=1)
         z0, z1 = self.projection_head(z0), self.projection_head(z1)
 
         clf_loss = self.criterion(z0, z1)
         crit_loss = 0.0
-        if self.dom_crit:
+
+        if self.alpha > 0.0:
             z = torch.cat([z0, z1])
             group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
             group = torch.cat([group, group])
@@ -93,13 +92,11 @@ class BarlowTwins(L.LightningModule):
 
             crit_loss = self.crit_crit(q, group)
 
-            # wandb.log({"crit-loss": crit_loss.item()})
             self.log("crit-loss", crit_loss.item(), prog_bar=True)
 
-        # wandb.log({"bt-loss": clf_loss.item()})
         self.log("bt-loss", clf_loss.item(), prog_bar=True)
 
-        return clf_loss + crit_loss*15.0
+        return clf_loss + crit_loss
 
     def configure_optimizers(self) -> Any:
         optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
@@ -170,7 +167,6 @@ class BarlowTwins(L.LightningModule):
             if acc > self.max_accuracy:
                 self.max_accuracy = acc.item()
             self.log("kNN_accuracy", acc * 100.0, prog_bar=True)
-            # wandb.log({"kNN_accuracy": acc * 100.0})
 
         self._val_predicted_labels.clear()
         self._val_targets.clear()
@@ -282,7 +278,6 @@ def main(cfg : DictConfig) -> None:
         knn_loader=train_loader_knn, 
         grouper=grouper,
         alpha=cfg.disc.alpha,
-        dom_crit=False,
         domain_mapper=domain_mapper,
         cfg=cfg
     )

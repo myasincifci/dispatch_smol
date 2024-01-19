@@ -13,3 +13,8 @@
 /pretraining/logs
 /pretraining/outputs
 /pretraining/model_zoo
+
+/data
+
+/notebooks/lightning_logs
+/notebooks/data
