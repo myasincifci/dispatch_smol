@@ -68,25 +68,28 @@ class BarlowTwins(L.LightningModule):
         self.grouper = grouper
         self.cfg = cfg
 
+        self.alpha = alpha
+
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         if self.cfg.unlabeled:
             (x0, x1), metadata = batch
         else:
             (x0, x1), _, metadata = batch
 
-        z0, z1 = self.backbone(x0).flatten(start_dim=1), self.backbone(x1).flatten(start_dim=1)
-        z0, z1 = self.projection_head(z0), self.projection_head(z1)
+        z0_, z1_ = self.backbone(x0).flatten(start_dim=1), self.backbone(x1).flatten(start_dim=1)
+        z0, z1 = self.projection_head(z0_), self.projection_head(z1_)
 
-        clf_loss = self.criterion(z0, z1)
+        bt_loss = self.criterion(z0, z1)
         crit_loss = 0.0
 
         if self.alpha > 0.0:
-            z = torch.cat([z0, z1])
+            z = torch.cat([z0_, z1_], dim=0)
             group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
-            group = torch.cat([group, group])
+            group = torch.cat([group, group], dim=0)
             group = self.domain_mapper(group)
+            group = group.to(self.device)
 
-            z = ReverseLayerF.apply(z, 1.0)
+            z = ReverseLayerF.apply(z, self.alpha)
 
             q = self.crit_clf(z)
 
@@ -94,9 +97,9 @@ class BarlowTwins(L.LightningModule):
 
             self.log("crit-loss", crit_loss.item(), prog_bar=True)
 
-        self.log("bt-loss", clf_loss.item(), prog_bar=True)
+        self.log("bt-loss", bt_loss.item(), prog_bar=True)
 
-        return clf_loss + crit_loss
+        return bt_loss + crit_loss
 
     def configure_optimizers(self) -> Any:
         optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
@@ -175,7 +178,6 @@ class BarlowTwins(L.LightningModule):
 def main(cfg : DictConfig) -> None:
 
     print(OmegaConf.to_yaml(cfg))
-    print(f"Using GPU: {torch.cuda.is_available()}")
 
     torch.set_float32_matmul_precision("medium")
 
@@ -282,7 +284,12 @@ def main(cfg : DictConfig) -> None:
         cfg=cfg
     )
 
-    trainer = L.Trainer(max_steps=25_000, accelerator="auto", val_check_interval=100)
+    trainer = L.Trainer(
+        max_steps=25_000, 
+        accelerator="auto", 
+        val_check_interval=100,
+        logger=logger
+    )
     trainer.fit(
         model=barlow_twins, 
         train_dataloaders=train_loader,

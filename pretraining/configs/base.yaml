@@ -6,6 +6,7 @@ unlabeled: True
 param:
     lr: 5e-4
     batch_size: 1_024
+    projector_dim: 8_192
 disc:
     alpha: 1.0
 weights: scratch
