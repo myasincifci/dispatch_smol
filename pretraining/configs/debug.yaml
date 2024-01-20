@@ -9,3 +9,7 @@ unlabeled: False
 param:
     batch_size: 2
     projector_dim: 128
+
+disc:
+    alpha: 0.0
+    mult: 1000

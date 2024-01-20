@@ -49,10 +49,18 @@ def main(cfg: DictConfig) -> None:
     # Transforms
     train_transform = BYOLTransform(
         view_1_transform=T.Compose([
-            BYOLView1Transform(input_size=96, gaussian_blur=0.0),
+            BYOLView1Transform(
+                input_size=96, 
+                gaussian_blur=0.0,
+                min_scale=0.5
+            ),
         ]),
         view_2_transform=T.Compose([
-            BYOLView2Transform(input_size=96, gaussian_blur=0.0),
+            BYOLView2Transform(
+                input_size=96, 
+                gaussian_blur=0.0,
+                min_scale=0.5
+            ),
         ])
     )
 

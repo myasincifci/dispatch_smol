@@ -82,7 +82,7 @@ class BarlowTwins(L.LightningModule):
 
         self.log("bt-loss", bt_loss.item(), prog_bar=True)
 
-        return bt_loss + crit_loss
+        return bt_loss + self.cfg.disc.mult * crit_loss
 
     def configure_optimizers(self) -> Any:
         optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
