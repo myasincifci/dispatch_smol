@@ -9,4 +9,3 @@ param:
     projector_dim: 8_192
 disc:
     alpha: 1.0
-weights: scratch

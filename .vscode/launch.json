@@ -5,10 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Pretrain",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "/home/yasin/notebooks/dispatch_smol/pretraining/train.py",
+            "cwd": "/home/yasin/notebooks/dispatch_smol/pretraining",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["--config-name", "debug"]

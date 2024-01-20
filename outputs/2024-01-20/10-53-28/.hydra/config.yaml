@@ -1,0 +1,12 @@
+name: Debug
+logging: false
+max_epochs: 1
+data_path: ../../data
+unlabeled: false
+param:
+  lr: 0.0005
+  batch_size: 2
+  projector_dim: 128
+disc:
+  alpha: 1.0
+weights: scratch

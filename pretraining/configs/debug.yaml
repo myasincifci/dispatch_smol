@@ -1,12 +1,11 @@
+defaults:
+    - base
+
 name: Debug
 logging: False
 max_epochs: 1
-data_path: ../data
+data_path: ../../data
 unlabeled: False
 param:
-    lr: 5e-4
     batch_size: 2
     projector_dim: 128
-disc:
-    alpha: 1.0
-weights: scratch
