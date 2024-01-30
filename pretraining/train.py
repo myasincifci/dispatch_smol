@@ -52,14 +52,26 @@ def main(cfg: DictConfig) -> None:
             BYOLView1Transform(
                 input_size=96, 
                 gaussian_blur=0.0,
-                min_scale=0.5
+                vf_prob=0.5,
+                # min_scale=0.5,
+
+                cj_bright=0.2,
+                cj_contrast=0.2,
+                cj_sat=0.2,
+                cj_hue=0.1,
             ),
         ]),
         view_2_transform=T.Compose([
             BYOLView2Transform(
                 input_size=96, 
                 gaussian_blur=0.0,
-                min_scale=0.5
+                vf_prob=0.5,
+                # min_scale=0.5,
+
+                cj_bright=0.2,
+                cj_contrast=0.2,
+                cj_sat=0.2,
+                cj_hue=0.1,
             ),
         ])
     )
