@@ -43,6 +43,8 @@ class DPSmol(pl.LightningModule):
         self.domain_mapper = domain_mapper
         self.freeze = list(freeze)
 
+        self.alpha = alpha
+
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         X, t, M = batch
         d = self.domain_mapper(self.grouper.metadata_to_group(M.cpu())).to(self.device)
@@ -51,6 +53,9 @@ class DPSmol(pl.LightningModule):
 
         self.log("loss_pred", loss_pred, prog_bar=True)
         self.log("loss_disc", loss_disc, prog_bar=True)
+
+        if self.alpha == 0:
+            loss_disc = 0.0
 
         return loss_pred + loss_disc
     
