@@ -82,7 +82,13 @@ def main(cfg: DictConfig) -> None:
     if cfg.unlabeled:
         unlabeled_dataset = get_dataset(dataset="camelyon17",
                           download=True, root_dir=cfg.data_path, unlabeled=True) 
-        train_set = unlabeled_dataset.get_subset("train_unlabeled", transform=train_transform)
+        _train_set = unlabeled_dataset.get_subset("train_unlabeled", transform=train_transform)
+        _val_set = unlabeled_dataset.get_subset("val_unlabeled", transform=train_transform)
+        _test_set = unlabeled_dataset.get_subset("test_unlabeled", transform=train_transform)
+        _extra_set = unlabeled_dataset.get_subset("extra_unlabeled", transform=train_transform)
+
+        train_set = torch.utils.data.ConcatDataset([_train_set, _val_set, _test_set, _extra_set])
+
     else:
         train_set = train_set_labeled
 
