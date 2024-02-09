@@ -1,0 +1,6 @@
+defaults:
+  - base
+
+name: Barlow-Twins-Linear-Eval
+weights: ../pretraining/lightning_logs/vbvfpi5k/checkpoints/epoch=14-step=24912.ckpt
+freeze: [1,2,3,4]

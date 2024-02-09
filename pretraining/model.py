@@ -36,7 +36,7 @@ class BarlowTwins(L.LightningModule):
         self.projection_head = BarlowTwinsProjectionHead(2048, cfg.param.projector_dim, cfg.param.projector_dim)
 
         if alpha > 0.0:
-            self.crit_clf = nn.Linear(2048, 3)
+            self.crit_clf = nn.Linear(2048, len(domain_mapper.unique_domains))
             self.crit_crit = nn.CrossEntropyLoss()
 
         self.criterion = BarlowTwinsLoss()

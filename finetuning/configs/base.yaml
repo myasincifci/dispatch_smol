@@ -2,7 +2,7 @@ name: Base
 logging: True
 max_epochs: 10
 param:
-    lr: 1e-3
+    lr: 1e-4
     weight_decay: 1e-2
     momentum: 0.9
     batch_size: 32

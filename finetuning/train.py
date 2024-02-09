@@ -91,11 +91,9 @@ class DPSmol(pl.LightningModule):
 
         prms += (list(self.model.disc_head.parameters()))
 
-        optimizer = optim.SGD(
+        optimizer = optim.AdamW(
             prms, 
-            lr=self.lr,
-            weight_decay=self.weight_decay, 
-            momentum=self.momentum
+            lr=self.lr
         )
 
         return optimizer
