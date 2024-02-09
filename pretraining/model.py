@@ -10,10 +10,11 @@ from torch.autograd import Function
 import torch.optim as optim
 from lightly.loss import BarlowTwinsLoss
 from lightly.models.barlowtwins import BarlowTwinsProjectionHead
+from lightly.utils.benchmarking.knn import knn_predict
 
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import pytorch_lightning as L
-from lightly.utils.benchmarking.knn import knn_predict
+import torchmetrics
 
 class ReverseLayerF(Function):
     @staticmethod
@@ -29,19 +30,18 @@ class ReverseLayerF(Function):
         return output, None
 
 class BarlowTwins(L.LightningModule):
-    def __init__(self, lr, backbone, knn_loader, grouper, alpha, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
         self.projection_head = BarlowTwinsProjectionHead(2048, cfg.param.projector_dim, cfg.param.projector_dim)
 
-        if alpha > 0.0:
+        if cfg.disc.alpha > 0.0:
             self.crit_clf = nn.Linear(2048, len(domain_mapper.unique_domains))
             self.crit_crit = nn.CrossEntropyLoss()
 
         self.criterion = BarlowTwinsLoss()
-        self.lr = lr
-        self.dataloader_kNN = knn_loader
+        self.lr = cfg.param.lr
 
         self.num_classes = 2
         self.knn_k = 200
@@ -51,7 +51,12 @@ class BarlowTwins(L.LightningModule):
         self.grouper = grouper
         self.cfg = cfg
 
-        self.alpha = alpha
+        self.train_features = []
+        self.train_targets = []
+
+        self.BS = cfg.param.batch_size
+
+        self.accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=2)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         if self.cfg.unlabeled:
@@ -65,7 +70,7 @@ class BarlowTwins(L.LightningModule):
         bt_loss = self.criterion(z0, z1)
         crit_loss = 0.0
 
-        if self.alpha > 0.0:
+        if self.cfg.disc.alpha > 0.0:
             z = torch.cat([z0_, z1_], dim=0)
             group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
             group = torch.cat([group, group], dim=0)
@@ -108,51 +113,37 @@ class BarlowTwins(L.LightningModule):
         return partial(self._fn, warmup_steps)
     
     def on_validation_epoch_start(self) -> None:
-        self._val_predicted_labels = []
-        self._val_targets = []
-        self.max_accuracy = 0.0
+        train, val = self.trainer.datamodule.val_dataloader()
+        train_len = train.dataset.__len__()
+        val_len = train.dataset.__len__()
 
-        train_features = []
-        train_targets = []
-        with torch.no_grad():
-            for data in self.dataloader_kNN:
-                img, target, _ = data
-                img = img.to(self.device)
-                target = target.to(self.device)
-                feature = self.backbone(img).squeeze()
-                feature = F.normalize(feature, dim=1)
-                train_features.append(feature)
-                train_targets.append(target)
-        self._train_features = torch.cat(train_features, dim=0).t().contiguous()
-        self._train_targets = torch.cat(train_targets, dim=0).t().contiguous()
-    
-    def validation_step(self, batch, batch_idx) -> None:
-        # we can only do kNN predictions once we have a feature bank
-        if self._train_features is not None and self._train_targets is not None:
-            images, targets, _ = batch
-            feature = self.backbone(images).squeeze()
-            feature = F.normalize(feature, dim=1)
-            predicted_labels = knn_predict(
-                feature,
-                self._train_features,
-                self._train_targets,
+        self.train_features = torch.empty((train_len, 2048), dtype=torch.float32, device=self.device)
+        self.train_targets = torch.empty((train_len,), dtype=torch.float32, device=self.device)
+
+    def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
+        bs = len(batch[0])    
+        
+        if dataloader_idx == 0:
+            X, t, _ = batch
+            X = X.to(self.device)
+            t = t.to(self.device)
+            z = self.backbone(X).squeeze()
+            z = F.normalize(z, dim=1)
+            self.train_features[batch_idx*self.BS:batch_idx*self.BS+bs] = z
+            self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t
+
+        elif dataloader_idx == 1:
+            X, t, _ = batch
+            z = self.backbone(X).squeeze()
+            z = F.normalize(z, dim=1)
+            y = knn_predict(
+                z,
+                self.train_features.T,
+                self.train_targets.T.to(torch.long),
                 self.num_classes,
                 self.knn_k,
                 self.knn_t,
             )
 
-            self._val_predicted_labels.append(predicted_labels.cpu())
-            self._val_targets.append(targets.cpu())
-
-    def on_validation_epoch_end(self) -> None:
-        if self._val_predicted_labels and self._val_targets:
-            predicted_labels = torch.cat(self._val_predicted_labels, dim=0)
-            targets = torch.cat(self._val_targets, dim=0)
-            top1 = (predicted_labels[:, 0] == targets).float().sum()
-            acc = top1 / len(targets)
-            if acc > self.max_accuracy:
-                self.max_accuracy = acc.item()
-            self.log("kNN_accuracy", acc * 100.0, prog_bar=True)
-
-        self._val_predicted_labels.clear()
-        self._val_targets.clear()
+            self.accuracy(y.argmax(dim=1), t)
+            self.log('val/accuracy', self.accuracy, on_epoch=True)
