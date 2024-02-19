@@ -27,7 +27,6 @@ class CamelyonDM(pl.LightningDataModule):
         )
 
         self.val_transform = T.Compose([
-            T.Resize((256, 256), antialias=True),
             T.ToTensor(),
             T.Normalize(
                 mean=IMAGENET_NORMALIZE["mean"],
@@ -103,7 +102,7 @@ class CamelyonDM(pl.LightningDataModule):
         batch_size=self.batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=4,
+        num_workers=8,
     )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
@@ -112,7 +111,7 @@ class CamelyonDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=False,
-            num_workers=4,
+            num_workers=8,
         )
 
         val_loader_knn = DataLoader(
@@ -120,7 +119,7 @@ class CamelyonDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=4,
+            num_workers=8,
         )
 
         return [
