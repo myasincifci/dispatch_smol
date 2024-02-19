@@ -42,7 +42,7 @@ def main(cfg: DictConfig) -> None:
         )
         logger = WandbLogger()
 
-    L.seed_everything(42)
+    L.seed_everything(42, workers=True)
 
     # Data
     data_module = CamelyonDM(cfg)
@@ -64,10 +64,6 @@ def main(cfg: DictConfig) -> None:
         model=barlow_twins,
         datamodule=data_module
     )
-
-    # if args.save:
-    #     torch.save(barlow_twins.backbone.state_dict(), args.save)
-
 
 if __name__ == "__main__":
     main()
