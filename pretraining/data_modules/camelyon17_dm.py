@@ -44,7 +44,7 @@ class CamelyonDM(pl.LightningDataModule):
 
         if self.unlabeled:
             self.unlabeled_dataset = get_dataset(
-                dataset=self.data_dir,
+                dataset='camelyon17',
                 download=True, 
                 root_dir=self.data_dir, 
                 unlabeled=True
