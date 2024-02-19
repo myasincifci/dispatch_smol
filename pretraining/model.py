@@ -51,9 +51,6 @@ class BarlowTwins(L.LightningModule):
         self.grouper = grouper
         self.cfg = cfg
 
-        self.train_features = []
-        self.train_targets = []
-
         self.BS = cfg.param.batch_size
 
         self.accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=2)
@@ -120,10 +117,12 @@ class BarlowTwins(L.LightningModule):
         self.train_features = torch.empty((train_len, 2048), dtype=torch.float32, device=self.device)
         self.train_targets = torch.empty((train_len,), dtype=torch.float32, device=self.device)
 
+        # self.correct = 0
+
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
         bs = len(batch[0])    
         
-        if dataloader_idx == 0:
+        if dataloader_idx == 0: # knn-train
             X, t, _ = batch
             X = X.to(self.device)
             t = t.to(self.device)
@@ -132,9 +131,9 @@ class BarlowTwins(L.LightningModule):
             self.train_features[batch_idx*self.BS:batch_idx*self.BS+bs] = z
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t
 
-        elif dataloader_idx == 1:
+        elif dataloader_idx == 1: # knn-val
             X, t, _ = batch
-            z = self.backbone(X).squeeze()
+            z = self.backbone(X).squeeze() # torch.ones(self.BS, 2048).to(self.device)
             z = F.normalize(z, dim=1)
             y = knn_predict(
                 z,
@@ -145,5 +144,12 @@ class BarlowTwins(L.LightningModule):
                 self.knn_t,
             )
 
+            # self.correct += (y.argmax(dim=1) == t).to(torch.long).sum()
+
             self.accuracy(y.argmax(dim=1), t)
-            self.log('val/accuracy', self.accuracy, on_epoch=True)
+            self.log('val/accuracy', self.accuracy, on_epoch=True, prog_bar=True)
+
+    # def on_validation_epoch_end(self) -> None:
+    #     # acc = self.accuracy.compute()
+    #     # self.accuracy.reset()
+    #     print(self.correct/1024)
