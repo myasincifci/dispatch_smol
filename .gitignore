@@ -1,22 +1,11 @@
 /__pycache__
 
 /*/lightning_logs
-
-/finetuning/__pycache__
-/finetuning/lightning_logs
-/finetuning/wandb
-/finetuning/logs
-/finetuning/outputs
-/finetuning/model_zoo
-
-/pretraining/__pycache__
-/pretraining/lightning_logs
-/pretraining/wandb
-/pretraining/logs
-/pretraining/outputs
-/pretraining/model_zoo
+/*/__pycache__
+/*/wandb
+/*/logs
+/*/outputs
+/*/model_zoo
+/*/data
 
 /data
-
-/notebooks/lightning_logs
-/notebooks/data

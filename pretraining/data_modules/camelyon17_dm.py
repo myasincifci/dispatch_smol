@@ -98,12 +98,13 @@ class CamelyonDM(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(
-        self.train_set,
-        batch_size=self.batch_size,
-        shuffle=True,
-        drop_last=False,
-        num_workers=8,
-    )
+            self.train_set,
+            batch_size=self.batch_size,
+            shuffle=True,
+            drop_last=False,
+            num_workers=8,
+            pin_memory=True
+        )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
         train_loader_knn = DataLoader(
@@ -112,6 +113,7 @@ class CamelyonDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=8,
+            pin_memory=True
         )
 
         val_loader_knn = DataLoader(
@@ -120,6 +122,7 @@ class CamelyonDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=8,
+            pin_memory=True
         )
 
         return [
