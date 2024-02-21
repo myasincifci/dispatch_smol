@@ -30,10 +30,7 @@ def main(cfg: DictConfig) -> None:
             key="deeed2a730495791be1a0158cf49240b65df1ffa"
         )
         wandb.init(
-            # set the wandb project where this run will be logged
             project="pretraining",
-
-            # track hyperparameters and run metadata
             config=cfg
         )
         logger = WandbLogger()

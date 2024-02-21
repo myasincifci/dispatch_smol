@@ -6,13 +6,23 @@
     "configurations": [
         {
             "name": "Pretrain",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "/home/yasin/notebooks/dispatch_smol/pretraining/train.py",
             "cwd": "/home/yasin/notebooks/dispatch_smol/pretraining",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["--config-name", "debug"]
-        }
+        },
+        {
+            "name": "Finetune",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/yasin/notebooks/dispatch_smol/finetuning/train.py",
+            "cwd": "/home/yasin/notebooks/dispatch_smol/finetuning",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["--config-name", "debug"]
+        },
     ]
 }
