@@ -62,7 +62,7 @@ def main(cfg: DictConfig) -> None:
         max_steps=25_000, 
         accelerator="auto",
         val_check_interval=100,
-        logger=logger
+        logger=logger,
     )
 
     trainer.fit(

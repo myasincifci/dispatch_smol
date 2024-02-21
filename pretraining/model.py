@@ -114,10 +114,8 @@ class BarlowTwins(L.LightningModule):
         train_len = train.dataset.__len__()
         val_len = train.dataset.__len__()
 
-        self.train_features = torch.empty((train_len, 2048), dtype=torch.float32, device=self.device)
-        self.train_targets = torch.empty((train_len,), dtype=torch.float32, device=self.device)
-
-        # self.correct = 0
+        self.train_features = torch.zeros((train_len, 2048), dtype=torch.float32, device=self.device)
+        self.train_targets = torch.zeros((train_len,), dtype=torch.float32, device=self.device)
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
         bs = len(batch[0])    
@@ -128,8 +126,15 @@ class BarlowTwins(L.LightningModule):
             t = t.to(self.device)
             z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)
-            self.train_features[batch_idx*self.BS:batch_idx*self.BS+bs] = z
-            self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t
+            self.train_features[batch_idx*self.BS:batch_idx*self.BS+bs] = z[:,:]
+            self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
+
+            # if self.train_features == []:
+            #     self.train_features = z
+            #     self.train_targets = t
+            # else:
+            #     self.train_features = torch.cat((self.train_features, z), dim=0).contiguous()
+            #     self.train_targets = torch.cat((self.train_targets, t), dim=0).contiguous()
 
         elif dataloader_idx == 1: # knn-val
             X, t, _ = batch
@@ -138,7 +143,7 @@ class BarlowTwins(L.LightningModule):
             y = knn_predict(
                 z,
                 self.train_features.T,
-                self.train_targets.T.to(torch.long),
+                self.train_targets.to(torch.long),
                 self.num_classes,
                 self.knn_k,
                 self.knn_t,
@@ -146,7 +151,7 @@ class BarlowTwins(L.LightningModule):
 
             # self.correct += (y.argmax(dim=1) == t).to(torch.long).sum()
 
-            self.accuracy(y.argmax(dim=1), t)
+            self.accuracy(y[:,0], t)
             self.log('val/accuracy', self.accuracy, on_epoch=True, prog_bar=True)
 
     # def on_validation_epoch_end(self) -> None:
