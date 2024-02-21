@@ -2,6 +2,7 @@ import hydra
 
 from model import BarlowTwins
 from data_modules.camelyon17_dm import CamelyonDM
+from data_modules.rxrx1_dm import RxRx1DM
 
 from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as L
@@ -30,15 +31,10 @@ def main(cfg: DictConfig) -> None:
         )
         wandb.init(
             # set the wandb project where this run will be logged
-            project="barlow-twins-wilds",
+            project="pretraining",
 
             # track hyperparameters and run metadata
-            config={
-                "learning_rate": cfg.param.lr,
-                "batch_size": cfg.param.batch_size,
-                "architecture": "ResNet 50",
-                "dataset": "camelyon17",
-            }
+            config=cfg
         )
         logger = WandbLogger()
 
@@ -46,12 +42,14 @@ def main(cfg: DictConfig) -> None:
 
     # Data
     data_module = CamelyonDM(cfg)
+    # data_module = RxRx1DM(cfg)
 
     # Model
     backbone = resnet50(ResNet50_Weights.IMAGENET1K_V2)
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(
+        num_classes=data_module.num_classes,
         backbone=backbone,
         grouper=data_module.grouper,
         domain_mapper=data_module.domain_mapper,

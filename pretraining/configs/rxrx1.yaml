@@ -2,5 +2,5 @@ defaults:
   - base
 
 dataset:
-    name: iwildcam
+    name: rxrx1
     version: 2.0

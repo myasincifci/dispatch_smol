@@ -30,7 +30,7 @@ class ReverseLayerF(Function):
         return output, None
 
 class BarlowTwins(L.LightningModule):
-    def __init__(self, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
@@ -43,7 +43,7 @@ class BarlowTwins(L.LightningModule):
         self.criterion = BarlowTwinsLoss()
         self.lr = cfg.param.lr
 
-        self.num_classes = 2
+        self.num_classes = num_classes
         self.knn_k = 200
         self.knn_t = 0.1
 
@@ -53,7 +53,7 @@ class BarlowTwins(L.LightningModule):
 
         self.BS = cfg.param.batch_size
 
-        self.accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=2)
+        self.accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=num_classes)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         if self.cfg.unlabeled:
