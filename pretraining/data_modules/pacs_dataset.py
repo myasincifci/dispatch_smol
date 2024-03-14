@@ -1,3 +1,4 @@
+import random
 import pathlib
 from typing import Tuple
 
@@ -8,7 +9,7 @@ from torchvision.datasets import ImageFolder
 from PIL import Image
 
 class PACSDataset(Dataset):
-    def __init__(self, root: str, transform=None) -> None:
+    def __init__(self, root: str, train=True, transform=None) -> None:
         self.classes = {
             'dog': 0, 
             'giraffe': 1, 
@@ -26,8 +27,18 @@ class PACSDataset(Dataset):
             'photo': 3
         }
 
+        self.n_classes = len(self.classes)
+
         path = pathlib.Path(root)
-        self.paths = [str(p) for p in list(path.rglob("*/*/*"))]
+        self.paths = [str(p) for p in list(path.rglob("*.jpg"))]
+        random.Random(42).shuffle(self.paths)
+
+        if train:
+            self.paths = self.paths[:int(len(self.paths)*.8)]
+        else:
+            self.paths = self.paths[int(len(self.paths)*.8):]
+
+
         self.transform = transform
         
     def __len__(self) -> int:
@@ -47,7 +58,7 @@ class PACSDataset(Dataset):
 def main():
     transform = T.ToTensor()
 
-    dataset = PACSDataset('../data/PACS', transform)
+    dataset = PACSDataset('../data/PACS', True, transform)
 
     a=1
 

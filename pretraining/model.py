@@ -69,10 +69,14 @@ class BarlowTwins(L.LightningModule):
 
         if self.cfg.disc.alpha > 0.0:
             z = torch.cat([z0_, z1_], dim=0)
-            group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
-            group = torch.cat([group, group], dim=0)
-            group = self.domain_mapper(group)
-            group = group.to(self.device)
+
+            if self.grouper:
+                group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
+                group = torch.cat([group, group], dim=0)
+                group = self.domain_mapper(group)
+                group = group.to(self.device)
+            else:
+                group = metadata
 
             z = ReverseLayerF.apply(z, self.alpha)
 

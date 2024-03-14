@@ -1,3 +1,4 @@
+from torch import tensor
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
@@ -6,8 +7,7 @@ from lightly.transforms.byol_transform import (BYOLTransform,
                                                BYOLView1Transform,
                                                BYOLView2Transform)
 from lightly.transforms.utils import IMAGENET_NORMALIZE
-from wilds import get_dataset
-from wilds.common.grouper import CombinatorialGrouper
+from data_modules.pacs_dataset import PACSDataset
 from utils import DomainMapper
 
 class PacsDM(pl.LightningDataModule):
@@ -36,14 +36,9 @@ class PacsDM(pl.LightningDataModule):
             ),
         ])
 
-        self.labeled_dataset = get_dataset(
-            dataset='rxrx1',
-            download=True, 
-            root_dir=self.data_dir, 
-            unlabeled=False
-        )
+        self.labeled_dataset = PACSDataset(cfg.data_path, train=True, transform=self.train_transform)
 
-        self.grouper = CombinatorialGrouper(self.labeled_dataset, ['experiment'])
+        self.grouper = None
 
         self.cfg = cfg
         self.domain_mapper = DomainMapper()
@@ -51,32 +46,18 @@ class PacsDM(pl.LightningDataModule):
 
     def setup(self, stage: str) -> None:
         if stage == 'fit':
-            train_set_labeled = self.labeled_dataset.get_subset(
-                    "train", 
-                    transform=self.train_transform
-            )
+            train_set_labeled = self.labeled_dataset
 
             self.train_set = train_set_labeled
 
-            self.val_set = self.labeled_dataset.get_subset(
-                "val", 
-                transform=self.val_transform
-            )
+            self.val_set = PACSDataset(self.cfg.data_path, train=False, transform=self.val_transform)
 
-            self.train_set_knn = self.labeled_dataset.get_subset(
-                "train", 
-                frac=4096/len(train_set_labeled), 
-                transform=self.val_transform
-            )
+            self.train_set_knn = PACSDataset(self.cfg.data_path, train=True, transform=self.val_transform)
 
-            self.val_set_knn = self.labeled_dataset.get_subset(
-                "val", 
-                frac=1024/len(self.val_set), 
-                transform=self.val_transform
-            )
+            self.val_set_knn = self.val_set
 
             self.domain_mapper = self.domain_mapper.setup(
-                train_set_labeled.metadata_array[:, 0]
+                tensor(list(self.train_set.domains.values()))
             )
             
         elif stage == 'test':

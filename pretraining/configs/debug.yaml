@@ -2,14 +2,13 @@ defaults:
     - base
 
 name: Debug
-logging: False
+logging: True
 max_epochs: 1
 data_path: ../../data
 unlabeled: False
 param:
-    batch_size: 64
-    projector_dim: 128
-
+    batch_size: 128
+    projector_dim: 256
 disc:
     alpha: 0.0
     mult: 0.0
