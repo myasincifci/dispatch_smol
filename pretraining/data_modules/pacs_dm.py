@@ -72,7 +72,7 @@ class PacsDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=False,
-            num_workers=8,
+            num_workers=32,
             pin_memory=True
         )
     
@@ -82,7 +82,7 @@ class PacsDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=32,
             pin_memory=True
         )
 
@@ -91,7 +91,7 @@ class PacsDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=32,
             pin_memory=True
         )
 

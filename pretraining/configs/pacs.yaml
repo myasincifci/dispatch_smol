@@ -1,0 +1,10 @@
+defaults:
+  - base
+
+data_path: /data/PACS
+unlabeled: False
+param:
+    batch_size: 512
+    projector_dim: 8_192
+
+name: PACS

@@ -17,6 +17,8 @@ from pytorch_lightning.loggers import WandbLogger
 
 import wandb
 
+import os
+
 
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg: DictConfig) -> None:
@@ -31,7 +33,7 @@ def main(cfg: DictConfig) -> None:
             key="deeed2a730495791be1a0158cf49240b65df1ffa"
         )
         wandb.init(
-            project="pretraining",
+            project="dispatch-pretrain-pacs",
             config=None #cfg
         )
         logger = WandbLogger()
@@ -58,7 +60,8 @@ def main(cfg: DictConfig) -> None:
     trainer = L.Trainer(
         max_steps=25_000, 
         accelerator="auto",
-        val_check_interval=38,
+        val_check_interval=5,
+        log_every_n_steps=5,
         logger=logger,
     )
 

@@ -31,6 +31,7 @@ class PACSDataset(Dataset):
 
         path = pathlib.Path(root)
         self.paths = [str(p) for p in list(path.rglob("*.jpg"))]
+
         random.Random(42).shuffle(self.paths)
 
         if train:
