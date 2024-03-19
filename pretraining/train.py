@@ -48,8 +48,8 @@ def main(cfg: DictConfig) -> None:
     data_module = CamelyonDM(cfg)
 
     # Model
-    # backbone = resnet50(ResNet50_Weights.IMAGENET1K_V2)
-    backbone = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
+    backbone = resnet50(ResNet50_Weights.IMAGENET1K_V2)
+    # backbone = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(

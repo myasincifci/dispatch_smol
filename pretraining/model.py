@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from torch.autograd import Function
 
 import torch.optim as optim
-from lightly.loss import BarlowTwinsLoss
+from lightly.loss import BarlowTwinsLoss, NTXentLoss
 from lightly.models.barlowtwins import BarlowTwinsProjectionHead
 from lightly.utils.benchmarking.knn import knn_predict
 
@@ -40,7 +40,9 @@ class BarlowTwins(L.LightningModule):
             self.crit_clf = nn.Linear(2048, len(domain_mapper.unique_domains))
             self.crit_crit = nn.CrossEntropyLoss()
 
-        self.criterion = BarlowTwinsLoss()
+        # self.criterion = BarlowTwinsLoss()
+        self.criterion = NTXentLoss()
+
         self.lr = cfg.param.lr
 
         self.num_classes = 2
