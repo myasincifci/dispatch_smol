@@ -42,11 +42,11 @@ def main(cfg: DictConfig) -> None:
 
     # Data
     # data_module = CamelyonDM(cfg)
-    # data_module = RxRx1DM(cfg)
-    data_module = PacsDM(cfg)
+    data_module = RxRx1DM(cfg)
+    # data_module = PacsDM(cfg)
 
     # Model
-    backbone = resnet50()#ResNet50_Weights.IMAGENET1K_V2)
+    backbone = resnet50(ResNet50_Weights.IMAGENET1K_V2)
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(
