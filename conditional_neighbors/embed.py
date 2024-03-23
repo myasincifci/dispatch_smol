@@ -65,9 +65,12 @@ def main():
     f = h5py.File('neighborhood.hdf5', 'w')
     counter = {}
     for i, n in enumerate(torch.bincount(train_set.metadata_array[:,0])):
-        counter[i] = 0
-        f.create_dataset(f'emb_{i}', (n, 2048), dtype='f')
-        f.create_dataset(f'idx_{i}', (n, 1), dtype='i')
+        if n == 0:
+            pass
+        else:
+            counter[i] = 0
+            f.create_dataset(f'emb_{i}', (n, 2048), dtype='f')
+            f.create_dataset(f'idx_{i}', (n, 1), dtype='i')
 
     with torch.no_grad():
         for batch in tqdm(train_loader):
@@ -77,11 +80,17 @@ def main():
             z = model(x.cuda())
             
             for d_ in torch.unique(d):
-                count = (d == d_).sum().item()
+                occ = d == d_
+                count = occ.sum().item()
 
-                z_d = z[d == d_]
+                z_d = z[occ]
+                idx_d = idx[occ]
 
-                f[f'emb_{d_}'][counter[d_.item()]:counter[d_.item()]+count] = torch.arange(counter[d_.item()], counter[d_.item()]+count)[:,None].repeat(1, 2048)# z_d[:].cpu().detach()
+                start = counter[d_.item()]
+                stop = start + count
+
+                f[f'emb_{d_}'][start:stop] = z_d[:].cpu().detach() # torch.arange(counter[d_.item()], counter[d_.item()]+count)[:,None].repeat(1, 2048)
+                f[f'idx_{d_}'][start:stop] = idx_d[:,None]
 
                 counter[d_.item()] += count
 
