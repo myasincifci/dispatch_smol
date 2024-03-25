@@ -51,7 +51,7 @@ class WILDSSubsetIdx(WILDSSubset):
         }
 
 def main():
-    dataset = Camelyon17DatasetIdx(root_dir='../data')
+    dataset = Camelyon17DatasetIdx(root_dir='../../data')
     grouper = CombinatorialGrouper(dataset, ['hospital'])
 
     train_set = dataset.get_subset('train', transform=T.Compose([T.Resize(96), T.ToTensor()]))
