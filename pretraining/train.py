@@ -19,7 +19,6 @@ import wandb
 
 import os
 
-
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
@@ -41,9 +40,9 @@ def main(cfg: DictConfig) -> None:
     L.seed_everything(42, workers=True)
 
     # Data
-    # data_module = CamelyonDM(cfg)
+    data_module = CamelyonDM(cfg)
     # data_module = RxRx1DM(cfg)
-    data_module = PacsDM(cfg)
+    # data_module = PacsDM(cfg)
 
     # Model
     backbone = resnet50()#ResNet50_Weights.IMAGENET1K_V2)
@@ -58,10 +57,9 @@ def main(cfg: DictConfig) -> None:
     )
 
     trainer = L.Trainer(
-        max_steps=25_000, 
+        max_steps=50_000, 
         accelerator="auto",
-        val_check_interval=5,
-        log_every_n_steps=5,
+        check_val_every_n_epoch=1,
         logger=logger,
     )
 

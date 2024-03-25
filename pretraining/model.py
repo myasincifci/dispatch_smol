@@ -114,7 +114,7 @@ class BarlowTwins(L.LightningModule):
         return partial(self._fn, warmup_steps)
     
     def on_validation_epoch_start(self) -> None:
-        train, val = self.trainer.datamodule.val_dataloader()
+        train, val, *_ = self.trainer.datamodule.val_dataloader()
         train_len = train.dataset.__len__()
         val_len = train.dataset.__len__()
 
@@ -133,14 +133,7 @@ class BarlowTwins(L.LightningModule):
             self.train_features[batch_idx*self.BS:batch_idx*self.BS+bs] = z[:,:]
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
-            # if self.train_features == []:
-            #     self.train_features = z
-            #     self.train_targets = t
-            # else:
-            #     self.train_features = torch.cat((self.train_features, z), dim=0).contiguous()
-            #     self.train_targets = torch.cat((self.train_targets, t), dim=0).contiguous()
-
-        elif dataloader_idx == 1: # knn-val
+        elif dataloader_idx > 0: # knn-val
             X, t, _ = batch
             z = self.backbone(X).squeeze() # torch.ones(self.BS, 2048).to(self.device)
             z = F.normalize(z, dim=1)

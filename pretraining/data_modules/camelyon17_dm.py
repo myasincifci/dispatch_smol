@@ -54,6 +54,8 @@ class CamelyonDM(pl.LightningDataModule):
         self.cfg = cfg
         self.domain_mapper = DomainMapper()
 
+        self.num_classes = self.labeled_dataset.n_classes
+
     def setup(self, stage: str) -> None:
         if stage == 'fit':
             train_set_labeled = self.labeled_dataset.get_subset(
@@ -69,10 +71,22 @@ class CamelyonDM(pl.LightningDataModule):
             else:
                 self.train_set = train_set_labeled
 
+            self.val_set_id = self.labeled_dataset.get_subset(
+                "id_val", 
+                transform=self.val_transform
+            )
+
             self.val_set = self.labeled_dataset.get_subset(
                 "val", 
                 transform=self.val_transform
             )
+
+            self.test_set = self.labeled_dataset.get_subset(
+                "test",
+                transform=self.val_transform
+            )
+
+            ################
 
             self.train_set_knn = self.labeled_dataset.get_subset(
                 "train", 
@@ -80,9 +94,21 @@ class CamelyonDM(pl.LightningDataModule):
                 transform=self.val_transform
             )
 
+            self.val_set_knn_id = self.labeled_dataset.get_subset(
+                "id_val",
+                frac=1024/len(self.val_set_id), 
+                transform=self.val_transform
+            )
+
             self.val_set_knn = self.labeled_dataset.get_subset(
                 "val", 
                 frac=1024/len(self.val_set), 
+                transform=self.val_transform
+            )
+
+            self.test_set_knn = self.labeled_dataset.get_subset(
+                "test",
+                frac=1024/len(self.test_set),
                 transform=self.val_transform
             )
 
@@ -116,6 +142,15 @@ class CamelyonDM(pl.LightningDataModule):
             pin_memory=True
         )
 
+        val_loader_knn_id = DataLoader(
+            self.val_set_knn_id,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=False,
+            num_workers=8,
+            pin_memory=True
+        )
+
         val_loader_knn = DataLoader(
             self.val_set_knn,
             batch_size=self.batch_size,
@@ -125,7 +160,18 @@ class CamelyonDM(pl.LightningDataModule):
             pin_memory=True
         )
 
+        test_loader_knn = DataLoader(
+            self.test_set_knn,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=False,
+            num_workers=8,
+            pin_memory=True
+        )
+
         return [
             train_loader_knn,
-            val_loader_knn
+            val_loader_knn_id,
+            val_loader_knn,
+            test_loader_knn
         ]
