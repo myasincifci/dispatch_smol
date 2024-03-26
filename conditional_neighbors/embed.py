@@ -7,14 +7,20 @@ from wilds.common.data_loaders import get_train_loader
 from torchvision import transforms as T
 
 from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
+from wilds.datasets.unlabeled.camelyon17_unlabeled_dataset import Camelyon17UnlabeledDataset
 from wilds.common.grouper import CombinatorialGrouper
 from wilds.datasets.wilds_dataset import WILDSSubset
+from wilds.datasets.unlabeled.wilds_unlabeled_dataset import WILDSUnlabeledSubset
+
+from models.model import BarlowTwins
+
+from torchvision.models.resnet import resnet50
 
 import numpy as np
 
 BS = 128
 
-class Camelyon17DatasetIdx(Camelyon17Dataset):
+class Camelyon17DatasetIdx(Camelyon17UnlabeledDataset):
     def get_subset(self, split, frac=1, transform=None):
         """
         Args:
@@ -39,25 +45,31 @@ class Camelyon17DatasetIdx(Camelyon17Dataset):
 
         return WILDSSubsetIdx(self, split_idx, transform)
     
-class WILDSSubsetIdx(WILDSSubset):
+class WILDSSubsetIdx(WILDSUnlabeledSubset):
     def __getitem__(self, idx):
-        x, y, m =  super().__getitem__(idx)
+        x, m =  super().__getitem__(idx)
 
         return {
             'idx': idx,
             'x': x,
-            'y': y,
             'm': m
         }
 
 def main():
-    dataset = Camelyon17DatasetIdx(root_dir='../../data')
+    dataset = Camelyon17DatasetIdx(root_dir='/data')
     grouper = CombinatorialGrouper(dataset, ['hospital'])
 
-    train_set = dataset.get_subset('train', transform=T.Compose([T.Resize(96), T.ToTensor()]))
+    train_set = dataset.get_subset('train_unlabeled', transform=T.Compose([T.Resize(96), T.ToTensor()]))
     train_loader = get_train_loader('standard', train_set, batch_size=BS)
 
-    model = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
+    # model = torch.hub.load('facebookresearch/barlowtwins:main', 'resnet50')
+    # model.fc = torch.nn.Identity()
+    # model = model.cuda()
+    # TODO: ugly bc of bug in lightning, fix later 
+    weights = torch.load('/home/myasincifci/dispatch_smol/conditional_neighbors/models/epoch=28-step=50000.ckpt', map_location=torch.device('cpu'))['state_dict']
+    bt = BarlowTwins(None, resnet50(), None, None, None)
+    bt.load_state_dict(weights, strict=False)
+    model = bt.backbone
     model.fc = torch.nn.Identity()
     model = model.cuda()
 

@@ -36,16 +36,15 @@ def main():
     k = 10
     bs = 128
 
-    f = h5py.File('./neighborhood.hdf5', 'r')
+    f = h5py.File('/tmp/neighborhood.hdf5', 'r')
 
     doms = {k.split('_')[-1] for k in f.keys()}
-    # trees = {k: KDTree(z, leaf_size=1_000) for k, (z, _) in tqdm(doms.items())}
     trees: Dict[KDTree] = {}
 
     for d in tqdm(doms):
         trees[d] = KDTree(f[f'emb_{d}'], leafsize=1_000)
 
-    f2 = h5py.File('./neighborhood_lookup.hdf5', 'w')
+    f2 = h5py.File('/tmp/neighborhood_lookup.hdf5', 'w')
     dset = f2.create_dataset('emb', (sum([len(f[f'emb_{d}']) for d in doms]), k*(len(doms)-1)), dtype='<i4')
 
     for d in sorted(doms):

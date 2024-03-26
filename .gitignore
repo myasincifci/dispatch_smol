@@ -1,7 +1,5 @@
-/__pycache__
 
 /*/lightning_logs
-/*/__pycache__
 /*/wandb
 /*/logs
 /*/outputs
@@ -11,3 +9,6 @@
 /data
 
 *.hdf5
+*__pycache__
+
+conditional_neighbors/models
