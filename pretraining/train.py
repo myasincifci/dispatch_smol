@@ -33,7 +33,7 @@ def main(cfg: DictConfig) -> None:
             key="deeed2a730495791be1a0158cf49240b65df1ffa"
         )
         wandb.init(
-            project="dispatch-pretrain-pacs",
+            project="dispatch-pretrain-rxrx1",
             config=None #cfg
         )
         logger = WandbLogger()
@@ -58,10 +58,10 @@ def main(cfg: DictConfig) -> None:
     )
 
     trainer = L.Trainer(
-        max_steps=25_000, 
+        max_steps=50_000, 
         accelerator="auto",
-        val_check_interval=5,
-        log_every_n_steps=5,
+        val_check_interval=40,
+        log_every_n_steps=10,
         logger=logger,
     )
 

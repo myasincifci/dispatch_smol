@@ -18,17 +18,17 @@ class RxRx1DM(pl.LightningDataModule):
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
-                T.Resize(96),
-                BYOLView1Transform(input_size=96, gaussian_blur=0.0),
+                T.Resize(128),
+                BYOLView1Transform(input_size=128, gaussian_blur=0.0),
             ]),
             view_2_transform=T.Compose([
-                T.Resize(96),
-                BYOLView2Transform(input_size=96, gaussian_blur=0.0),
+                T.Resize(128),
+                BYOLView2Transform(input_size=128, gaussian_blur=0.0),
             ])
         )
 
         self.val_transform = T.Compose([
-            T.Resize(96),
+            T.Resize(128),
             T.ToTensor(),
             T.Normalize(
                 mean=IMAGENET_NORMALIZE["mean"],
@@ -91,7 +91,7 @@ class RxRx1DM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=False,
-            num_workers=8,
+            num_workers=4,
             pin_memory=True
         )
     
@@ -101,7 +101,7 @@ class RxRx1DM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=4,
             pin_memory=True
         )
 
@@ -110,7 +110,7 @@ class RxRx1DM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=4,
             pin_memory=True
         )
 
