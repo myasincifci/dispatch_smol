@@ -2,6 +2,7 @@ import hydra
 
 from model import BarlowTwins
 from data_modules.camelyon17_dm import CamelyonDM
+from data_modules.camelyon17nn_dm import CamelyonDMNN
 from data_modules.rxrx1_dm import RxRx1DM
 from data_modules.pacs_dm import PacsDM
 
@@ -40,7 +41,7 @@ def main(cfg: DictConfig) -> None:
     L.seed_everything(42, workers=True)
 
     # Data
-    data_module = CamelyonDM(cfg)
+    data_module = CamelyonDMNN(cfg)
     # data_module = RxRx1DM(cfg)
     # data_module = PacsDM(cfg)
 

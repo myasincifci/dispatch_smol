@@ -2,7 +2,7 @@ defaults:
     - base
 
 name: Debug
-logging: True
+logging: False
 max_epochs: 1
 data_path: ../../data
 unlabeled: False

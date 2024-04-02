@@ -59,7 +59,8 @@ class BarlowTwins(L.LightningModule):
         if self.cfg.unlabeled:
             (x0, x1), metadata = batch
         else:
-            (x0, x1), _, metadata = batch
+            # (x0, x1), _, metadata = batch
+            x0, x1, metadata = batch['x'], batch['x_'], batch['m']
 
         z0_, z1_ = self.backbone(x0).flatten(start_dim=1), self.backbone(x1).flatten(start_dim=1)
         z0, z1 = self.projection_head(z0_), self.projection_head(z1_)
