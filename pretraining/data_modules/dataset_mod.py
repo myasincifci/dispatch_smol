@@ -24,7 +24,7 @@ class WILDSSubsetMod(WILDSSubset):
 
         return {
             'x': x0,
-            'x_': x1 if rand < prob else x1_,
+            'x_': x1 if rand > prob else x1_,
             't': t,
             'm': m
         }
