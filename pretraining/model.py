@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from torch.autograd import Function
 
 import torch.optim as optim
-from lightly.loss import BarlowTwinsLoss
+from lightly.loss import BarlowTwinsLoss, NTXentLoss
 from lightly.models.barlowtwins import BarlowTwinsProjectionHead
 from lightly.utils.benchmarking.knn import knn_predict
 

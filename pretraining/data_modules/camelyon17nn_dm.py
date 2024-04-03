@@ -18,11 +18,13 @@ class CamelyonDMNN(pl.LightningDataModule):
         self.batch_size = cfg.param.batch_size
 
         self.train_transform = T.Compose([
-            T.ToTensor(),
-            T.Normalize(
-                mean=IMAGENET_NORMALIZE["mean"],
-                std=IMAGENET_NORMALIZE["std"],
-            ),
+            BYOLView1Transform(
+                input_size=96,
+                cj_prob=0.0,
+                random_gray_scale=0.0,
+                gaussian_blur=0.0,
+                solarization_prob=0.0,  
+            )
         ])
 
         self.val_transform = T.Compose([
