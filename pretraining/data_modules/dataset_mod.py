@@ -4,7 +4,7 @@ from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
 
 class WILDSSubsetMod(WILDSSubset):
     def __getitem__(self, idx):
-        x, t, m =  super().__getitem__(idx)
+        (x0, x1), t, m =  super().__getitem__(idx)
         d = m[0]
 
         # Get x_ by uniformly sampling from indices that have the same class label but not domain
@@ -17,11 +17,14 @@ class WILDSSubsetMod(WILDSSubset):
 
         idx_ = np.random.choice(R[(D != d)&(T == t)], 1)
 
-        x_, _, _ = super().__getitem__(idx_.item())
+        (x0_, x1_), _, _ = super().__getitem__(idx_.item())
+
+        rand = np.random.rand(1).item()
+        prob = 0.2
 
         return {
-            'x': x,
-            'x_': x_,
+            'x': x0,
+            'x_': x1 if rand < prob else x1_,
             't': t,
             'm': m
         }
