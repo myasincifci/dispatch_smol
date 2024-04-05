@@ -19,21 +19,21 @@ import wandb
 
 import os
 
+
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg: DictConfig) -> None:
+    print(os.getcwd())
     print(OmegaConf.to_yaml(cfg))
 
     torch.set_float32_matmul_precision("medium")
 
     logger = True
     if cfg.logging:
-        # start a new wandb run to track this script
-        wandb.login(
-            key="deeed2a730495791be1a0158cf49240b65df1ffa"
-        )
         wandb.init(
-            project="dispatch-pretrain-pacs",
-            config=None #cfg
+            project="debugging",
+            config=OmegaConf.to_container(
+                cfg, resolve=True, throw_on_missing=True
+            )
         )
         logger = WandbLogger()
 
@@ -45,7 +45,7 @@ def main(cfg: DictConfig) -> None:
     # data_module = PacsDM(cfg)
 
     # Model
-    backbone = resnet50()#ResNet50_Weights.IMAGENET1K_V2)
+    backbone = resnet50()  # ResNet50_Weights.IMAGENET1K_V2)
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(
@@ -57,7 +57,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     trainer = L.Trainer(
-        max_steps=50_000, 
+        max_steps=50_000,
         accelerator="auto",
         check_val_every_n_epoch=1,
         logger=logger,
@@ -67,6 +67,7 @@ def main(cfg: DictConfig) -> None:
         model=barlow_twins,
         datamodule=data_module
     )
+
 
 if __name__ == "__main__":
     main()
