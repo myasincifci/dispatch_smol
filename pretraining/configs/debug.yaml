@@ -3,7 +3,6 @@ defaults:
 
 name: Debug
 logging: True
-max_epochs: 1
 data_path: ../../data
 unlabeled: False
 

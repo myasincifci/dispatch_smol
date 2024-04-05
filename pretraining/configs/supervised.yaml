@@ -1,0 +1,10 @@
+defaults:
+    - base
+
+name: Debug
+logging: True
+max_epochs: 1
+unlabeled: False
+
+logger:
+    project: pretraining-supervised
