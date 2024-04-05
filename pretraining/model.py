@@ -34,7 +34,7 @@ class BarlowTwins(L.LightningModule):
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
-        self.projection_head = BarlowTwinsProjectionHead(2048, cfg.param.projector_dim, cfg.param.projector_dim)
+        self.projection_head = BarlowTwinsProjectionHead(2048, cfg.model.projector_dim, cfg.model.projector_dim)
 
         if cfg.disc.alpha > 0.0:
             self.crit_clf = nn.Linear(2048, len(domain_mapper.unique_domains))

@@ -30,7 +30,7 @@ def main(cfg: DictConfig) -> None:
     logger = True
     if cfg.logging:
         wandb.init(
-            project="debugging",
+            project=cfg.logger.project,
             config=OmegaConf.to_container(
                 cfg, resolve=True, throw_on_missing=True
             )
@@ -45,7 +45,10 @@ def main(cfg: DictConfig) -> None:
     # data_module = PacsDM(cfg)
 
     # Model
-    backbone = resnet50()  # ResNet50_Weights.IMAGENET1K_V2)
+    if cfg.model.pretrained:
+        backbone = resnet50(ResNet50_Weights.DEFAULT)
+    else:
+        backbone = resnet50()
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(
@@ -57,9 +60,9 @@ def main(cfg: DictConfig) -> None:
     )
 
     trainer = L.Trainer(
-        max_steps=50_000,
+        max_steps=cfg.trainer.max_steps,
         accelerator="auto",
-        check_val_every_n_epoch=1,
+        check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
     )
 

@@ -3,10 +3,22 @@ logging: True
 max_epochs: 30
 data_path: /data
 unlabeled: False
+
+model:
+    pretrained: False
+    projector_dim: 8_192
+
 param:
     lr: 1e-4
     batch_size: 1_024
-    projector_dim: 8_192
+
 disc:
     alpha: 0.0
     mult: 0.0
+
+trainer:
+    max_steps: 50_000
+    check_val_every_n_epoch: 1
+
+logger:
+    project: pretraining-base
