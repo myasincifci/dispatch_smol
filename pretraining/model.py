@@ -1,20 +1,18 @@
-from typing import Any
 from functools import partial
+from typing import Any
 
+import pytorch_lightning as L
 import torch
-from torch import nn, Tensor
-from torch.nn import functional as F
-
-from torch.autograd import Function
-
 import torch.optim as optim
+import torchmetrics
 from lightly.loss import BarlowTwinsLoss
 from lightly.models.barlowtwins import BarlowTwinsProjectionHead
 from lightly.utils.benchmarking.knn import knn_predict
-
 from pytorch_lightning.utilities.types import STEP_OUTPUT
-import pytorch_lightning as L
-import torchmetrics
+from torch import Tensor, nn
+from torch.autograd import Function
+from torch.nn import functional as F
+
 
 class ReverseLayerF(Function):
     @staticmethod
@@ -29,12 +27,14 @@ class ReverseLayerF(Function):
 
         return output, None
 
+
 class BarlowTwins(L.LightningModule):
     def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
-        self.projection_head = BarlowTwinsProjectionHead(2048, cfg.model.projector_dim, cfg.model.projector_dim)
+        self.projection_head = BarlowTwinsProjectionHead(
+            2048, cfg.model.projector_dim, cfg.model.projector_dim)
 
         if cfg.disc.alpha > 0.0:
             self.crit_clf = nn.Linear(2048, len(domain_mapper.unique_domains))
@@ -53,7 +53,8 @@ class BarlowTwins(L.LightningModule):
 
         self.BS = cfg.param.batch_size
 
-        self.accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=num_classes)
+        self.accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass", num_classes=num_classes)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         if self.cfg.unlabeled:
@@ -61,7 +62,8 @@ class BarlowTwins(L.LightningModule):
         else:
             (x0, x1), _, metadata = batch
 
-        z0_, z1_ = self.backbone(x0).flatten(start_dim=1), self.backbone(x1).flatten(start_dim=1)
+        z0_, z1_ = self.backbone(x0).flatten(
+            start_dim=1), self.backbone(x1).flatten(start_dim=1)
         z0, z1 = self.projection_head(z0_), self.projection_head(z1_)
 
         bt_loss = self.criterion(z0, z1)
@@ -71,7 +73,8 @@ class BarlowTwins(L.LightningModule):
             z = torch.cat([z0_, z1_], dim=0)
 
             if self.grouper:
-                group = self.grouper.metadata_to_group(metadata.cpu()).to(self.device)
+                group = self.grouper.metadata_to_group(
+                    metadata.cpu()).to(self.device)
                 group = torch.cat([group, group], dim=0)
                 group = self.domain_mapper(group)
                 group = group.to(self.device)
@@ -112,30 +115,34 @@ class BarlowTwins(L.LightningModule):
 
     def _linear_warmup_decay(self, warmup_steps):
         return partial(self._fn, warmup_steps)
-    
+
     def on_validation_epoch_start(self) -> None:
         train, val, *_ = self.trainer.datamodule.val_dataloader()
         train_len = train.dataset.__len__()
         val_len = train.dataset.__len__()
 
-        self.train_features = torch.zeros((train_len, 2048), dtype=torch.float32, device=self.device)
-        self.train_targets = torch.zeros((train_len,), dtype=torch.float32, device=self.device)
+        self.train_features = torch.zeros(
+            (train_len, 2048), dtype=torch.float32, device=self.device)
+        self.train_targets = torch.zeros(
+            (train_len,), dtype=torch.float32, device=self.device)
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
-        bs = len(batch[0])    
-        
-        if dataloader_idx == 0: # knn-train
+        bs = len(batch[0])
+
+        if dataloader_idx == 0:  # knn-train
             X, t, _ = batch
             X = X.to(self.device)
             t = t.to(self.device)
             z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)
-            self.train_features[batch_idx*self.BS:batch_idx*self.BS+bs] = z[:,:]
+            self.train_features[batch_idx *
+                                self.BS:batch_idx*self.BS+bs] = z[:, :]
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
-        elif dataloader_idx > 0: # knn-val
+        elif dataloader_idx > 0:  # knn-val
             X, t, _ = batch
-            z = self.backbone(X).squeeze() # torch.ones(self.BS, 2048).to(self.device)
+            # torch.ones(self.BS, 2048).to(self.device)
+            z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)
             y = knn_predict(
                 z,
@@ -148,8 +155,9 @@ class BarlowTwins(L.LightningModule):
 
             # self.correct += (y.argmax(dim=1) == t).to(torch.long).sum()
 
-            self.accuracy(y[:,0], t)
-            self.log('val/accuracy', self.accuracy, on_epoch=True, prog_bar=True)
+            self.accuracy(y[:, 0], t)
+            self.log('val/accuracy', self.accuracy,
+                     on_epoch=True, prog_bar=True)
 
     # def on_validation_epoch_end(self) -> None:
     #     # acc = self.accuracy.compute()
