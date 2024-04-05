@@ -12,3 +12,4 @@
 *__pycache__
 
 conditional_neighbors/models
+pretraining/data_modules/__pycache__
