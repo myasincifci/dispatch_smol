@@ -1,23 +1,19 @@
+import os
+
 import hydra
-
-from model import BarlowTwins
-from data_modules.camelyon17_dm import CamelyonDM
-from data_modules.rxrx1_dm import RxRx1DM
-from data_modules.pacs_dm import PacsDM
-
-from omegaconf import DictConfig, OmegaConf
 import pytorch_lightning as L
 import torch
 import torch.nn as nn
-
+from data_modules.camelyon17_dm import CamelyonDM
+from data_modules.pacs_dm import PacsDM
+from data_modules.rxrx1_dm import RxRx1DM
+from model import BarlowTwins
+from omegaconf import DictConfig, OmegaConf
+from pytorch_lightning.loggers import WandbLogger
 from torchvision import transforms as T
 from torchvision.models.resnet import ResNet50_Weights, resnet50
 
-from pytorch_lightning.loggers import WandbLogger
-
 import wandb
-
-import os
 
 
 @hydra.main(version_base=None, config_path="configs")
