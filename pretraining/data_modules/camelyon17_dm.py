@@ -52,7 +52,9 @@ class CamelyonDM(pl.LightningDataModule):
         self.grouper = CombinatorialGrouper(self.labeled_dataset, ['hospital'])
 
         self.cfg = cfg
-        self.domain_mapper = DomainMapper()
+        self.domain_mapper = DomainMapper().setup(
+            self.labeled_dataset.get_subset("train").metadata_array[:, 0]
+        )
 
         self.num_classes = self.labeled_dataset.n_classes
 
@@ -112,9 +114,9 @@ class CamelyonDM(pl.LightningDataModule):
                 transform=self.val_transform
             )
 
-            self.domain_mapper = self.domain_mapper.setup(
-                train_set_labeled.metadata_array[:, 0]
-            )
+            # self.domain_mapper = self.domain_mapper.setup(
+            #     train_set_labeled.metadata_array[:, 0]
+            # )
             
         elif stage == 'test':
             pass

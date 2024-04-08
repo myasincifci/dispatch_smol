@@ -81,7 +81,7 @@ class BarlowTwins(L.LightningModule):
             else:
                 group = metadata
 
-            z = ReverseLayerF.apply(z, self.alpha)
+            z = ReverseLayerF.apply(z, self.cfg.disc.alpha)
 
             q = self.crit_clf(z)
 
