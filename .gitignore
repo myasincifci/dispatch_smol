@@ -9,7 +9,7 @@
 /data
 
 *.hdf5
-*__pycache__
+__pycache__/
+*.pyc
 
 conditional_neighbors/models
-pretraining/data_modules/__pycache__

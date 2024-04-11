@@ -14,7 +14,7 @@ param:
 
 disc:
     alpha: 1.0
-    mult: 100.0
+    mult: 10.0
 
 trainer:
     max_steps: 50_000
