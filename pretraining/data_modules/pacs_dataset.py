@@ -5,6 +5,7 @@ from typing import Tuple
 import torch
 from torch.utils.data import Dataset
 from torchvision.datasets import ImageFolder
+from torchvision.io import read_image
 
 from PIL import Image
 
@@ -47,7 +48,7 @@ class PACSDataset(Dataset):
 
     def __getitem__(self, index) -> Tuple[torch.Tensor, int, int]:
         path = self.paths[index]
-        image = Image.open(path)
+        image = read_image(path)
         domain = self.domains[path.split('/')[-3]]
         cls = self.classes[path.split('/')[-2]]
 
