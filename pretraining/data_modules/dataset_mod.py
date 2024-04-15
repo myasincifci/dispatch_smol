@@ -20,7 +20,7 @@ class WILDSSubsetMod(WILDSSubset):
         (x0_, x1_), _, _ = super().__getitem__(idx_.item())
 
         rand = np.random.rand(1).item()
-        prob = 0.2
+        prob = 0.15
 
         return {
             'x': x0,

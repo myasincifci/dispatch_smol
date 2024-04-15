@@ -33,7 +33,7 @@ def main(cfg: DictConfig) -> None:
             key="deeed2a730495791be1a0158cf49240b65df1ffa"
         )
         wandb.init(
-            project="dispatch-pretrain-pacs",
+            project="pretrain-w-labels",
             config=None #cfg
         )
         logger = WandbLogger()
