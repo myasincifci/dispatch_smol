@@ -33,11 +33,15 @@ class BarlowTwins(L.LightningModule):
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
+        self.emb_dim = 2048
         self.projection_head = BarlowTwinsProjectionHead(
-            2048, cfg.model.projector_dim, cfg.model.projector_dim)
+            self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
+        
+        self.backbone = torch.compile(self.backbone, mode='reduce-overhead')
+        self.projection_head = torch.compile(self.projection_head, mode='reduce-overhead')
 
         if cfg.disc.alpha > 0.0:
-            self.crit_clf = nn.Linear(2048, len(domain_mapper.unique_domains))
+            self.crit_clf = nn.Linear(self.emb_dim, len(domain_mapper.unique_domains))
             self.crit_crit = nn.CrossEntropyLoss()
 
         self.criterion = BarlowTwinsLoss()
@@ -122,7 +126,7 @@ class BarlowTwins(L.LightningModule):
         val_len = train.dataset.__len__()
 
         self.train_features = torch.zeros(
-            (train_len, 2048), dtype=torch.float32, device=self.device)
+            (train_len, self.emb_dim), dtype=torch.float32, device=self.device)
         self.train_targets = torch.zeros(
             (train_len,), dtype=torch.float32, device=self.device)
 
@@ -141,7 +145,7 @@ class BarlowTwins(L.LightningModule):
 
         elif dataloader_idx > 0:  # knn-val
             X, t, _ = batch
-            # torch.ones(self.BS, 2048).to(self.device)
+            # torch.ones(self.BS, self.emb_dim).to(self.device)
             z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)
             y = knn_predict(
