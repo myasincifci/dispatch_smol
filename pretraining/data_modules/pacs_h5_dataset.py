@@ -97,7 +97,7 @@ def get_pacs_loo(root, leave_out=None, train_tf=None, test_tf=None):
     domains = {'sketch', 'cartoon', 'art_painting', 'photo'}
     
     train_set = PACSDataset(root=root, leave_out=leave_out, transform=train_tf)
-    test_set = PACSDataset(root=root, leave_out=list(domains-set(leave_out)), transform=train_tf)
+    test_set = PACSDataset(root=root, leave_out=list(domains-set(leave_out)), transform=test_tf)
 
     return train_set, test_set
 

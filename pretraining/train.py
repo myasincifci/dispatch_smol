@@ -36,9 +36,9 @@ def main(cfg: DictConfig) -> None:
     L.seed_everything(42, workers=True)
 
     # Data
-    data_module = CamelyonDM(cfg)
+    # data_module = CamelyonDM(cfg)
     # data_module = RxRx1DM(cfg)
-    # data_module = PacsDM(cfg)
+    data_module = PacsDM(cfg, leave_out=['sketch'])
 
     # Model
     if cfg.model.pretrained:

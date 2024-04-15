@@ -1,10 +1,22 @@
 defaults:
   - base
 
-data_path: /data/PACS
-unlabeled: False
-param:
-    batch_size: 512
-    projector_dim: 8_192
+logging: True
 
-name: PACS
+data_path: /home/yasin/notebooks/data
+unlabeled: False
+
+model:
+    pretrained: True
+    projector_dim: 1_024
+
+param:
+    lr: 1e-4
+    batch_size: 128
+
+disc:
+    alpha: 0.0
+    mult: 0.0
+
+logger:
+    project: pretraining-pacs
