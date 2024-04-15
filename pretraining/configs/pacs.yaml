@@ -1,9 +1,8 @@
 defaults:
   - base
 
+data_path: /tmp
 logging: True
-
-data_path: /home/yasin/notebooks/data
 unlabeled: False
 
 model:

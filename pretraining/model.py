@@ -37,8 +37,8 @@ class BarlowTwins(L.LightningModule):
         self.projection_head = BarlowTwinsProjectionHead(
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
         
-        self.backbone = torch.compile(self.backbone, mode='reduce-overhead')
-        self.projection_head = torch.compile(self.projection_head, mode='reduce-overhead')
+        # self.backbone = torch.compile(self.backbone, mode='reduce-overhead')
+        # self.projection_head = torch.compile(self.projection_head, mode='reduce-overhead')
 
         if cfg.disc.alpha > 0.0:
             self.crit_clf = nn.Linear(self.emb_dim, len(domain_mapper.unique_domains))
