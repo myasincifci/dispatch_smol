@@ -61,6 +61,7 @@ def main(cfg: DictConfig) -> None:
         accelerator="auto",
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
+        log_every_n_steps=5
     )
 
     trainer.fit(
