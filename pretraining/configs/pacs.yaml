@@ -7,15 +7,18 @@ unlabeled: False
 
 model:
     pretrained: True
-    projector_dim: 8_192
+    projector_dim: 1_024
 
 param:
-    lr: 5e-4
-    batch_size: 1_024
+    lr: 1e-4
+    batch_size: 128
 
 disc:
     alpha: 0.0
     mult: 0.0
+
+trainer:
+    max_steps: 100_000
 
 logger:
     project: pretraining-pacs
