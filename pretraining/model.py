@@ -13,21 +13,6 @@ from torch import Tensor, nn
 from torch.autograd import Function
 from torch.nn import functional as F
 
-
-class ReverseLayerF(Function):
-    @staticmethod
-    def forward(ctx, x, alpha):
-        ctx.alpha = alpha
-
-        return x.view_as(x)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        output = grad_output.neg() * ctx.alpha
-
-        return output, None
-
-
 class BarlowTwins(L.LightningModule):
     def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -36,13 +21,6 @@ class BarlowTwins(L.LightningModule):
         self.emb_dim = 2048
         self.projection_head = BarlowTwinsProjectionHead(
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
-        
-        # self.backbone = torch.compile(self.backbone, mode='reduce-overhead')
-        # self.projection_head = torch.compile(self.projection_head, mode='reduce-overhead')
-
-        if cfg.disc.alpha > 0.0:
-            self.crit_clf = nn.Linear(self.emb_dim, len(domain_mapper.unique_domains))
-            self.crit_crit = nn.CrossEntropyLoss()
 
         self.criterion = BarlowTwinsLoss()
         self.lr = cfg.param.lr
@@ -73,31 +51,9 @@ class BarlowTwins(L.LightningModule):
         bt_loss = self.criterion(z0, z1)
         crit_loss = 0.0
 
-        if self.cfg.disc.alpha > 0.0:
-            z = torch.cat([z0_, z1_], dim=0)
-
-            if self.grouper:
-                group = self.grouper.metadata_to_group(
-                    metadata.cpu()).to(self.device)
-                group = torch.cat([group, group], dim=0)
-                group = self.domain_mapper(group)
-                group = group.to(self.device)
-            else:
-                group = torch.cat([metadata, metadata], dim=0)
-                group = self.domain_mapper(group)
-                group = group.to(self.device)
-
-            z = ReverseLayerF.apply(z, self.cfg.disc.alpha)
-
-            q = self.crit_clf(z)
-
-            crit_loss = self.crit_crit(q, group.to(torch.long))
-
-            self.log("crit-loss", crit_loss.item(), prog_bar=True)
-
         self.log("bt-loss", bt_loss.item(), prog_bar=True)
 
-        return bt_loss + self.cfg.disc.mult * crit_loss
+        return bt_loss
 
     def configure_optimizers(self) -> Any:
         optimizer = optim.Adam(params=self.parameters(), lr=self.lr)

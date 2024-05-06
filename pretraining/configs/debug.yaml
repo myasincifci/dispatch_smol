@@ -1,12 +1,11 @@
 defaults:
   - base
 
-data_path: /data
 logging: False
 unlabeled: False
 
 model:
-    pretrained: True
+    pretrained: False
     projector_dim: 128
 
 param:

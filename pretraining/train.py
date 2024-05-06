@@ -11,7 +11,8 @@ from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from torchvision import transforms as T
-from torchvision.models.resnet import ResNet50_Weights, resnet50, ResNet18_Weights, resnet18
+from torchvision.models.resnet import ResNet50_Weights, ResNet18_Weights
+from resnet_mix import resnet18, resnet50
 
 import wandb
 
@@ -36,15 +37,24 @@ def main(cfg: DictConfig) -> None:
     L.seed_everything(42, workers=True)
 
     # Data
-    data_module = CamelyonDM(cfg)
+    # data_module = CamelyonDM(cfg)
     # data_module = RxRx1DM(cfg)
-    # data_module = PacsDM(cfg, leave_out=['sketch'])
+    data_module = PacsDM(cfg, leave_out=['sketch'])
 
     # Model
     if cfg.model.pretrained:
-        backbone = resnet50(ResNet50_Weights.DEFAULT)
+        backbone = resnet50(
+            ResNet50_Weights.DEFAULT,
+            p=cfg.mixstyle.p,
+            alpha=cfg.mixstyle.alpha,
+            eps=cfg.mixstyle.eps,
+        )
     else:
-        backbone = resnet50()
+        backbone = resnet50(
+            p=cfg.mixstyle.p,
+            alpha=cfg.mixstyle.alpha,
+            eps=cfg.mixstyle.eps,
+        )
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(
