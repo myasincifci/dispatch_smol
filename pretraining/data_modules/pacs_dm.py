@@ -59,15 +59,15 @@ class PacsDM(pl.LightningDataModule):
         self.grouper = None
 
         self.cfg = cfg
-        self.domain_mapper = DomainMapper()
+        self.domain_mapper = DomainMapper().setup(
+            tensor(list(self.train_set.domains.values()))
+        )
         self.num_classes = self.train_set.n_classes
 
     def setup(self, stage: str) -> None:
         if stage == 'fit':
-            self.domain_mapper = self.domain_mapper.setup(
-                tensor(list(self.train_set.domains.values()))
-            )
-            
+            pass
+
         elif stage == 'test':
             pass
         

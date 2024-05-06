@@ -1,17 +1,21 @@
 defaults:
-    - base
+  - base
 
-name: Debug
-logging: True
-max_epochs: 1
-data_path: ../../data
+data_path: /data
+logging: False
 unlabeled: False
 
 model:
-    projector_dim: 256
+    pretrained: True
+    projector_dim: 128
 
 param:
+    lr: 5e-4
     batch_size: 128
 
+disc:
+    alpha: 1.0
+    mult: 0.5
+
 logger:
-    project: pretraining-debug
+    project: pretraining-pacs
