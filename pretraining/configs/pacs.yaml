@@ -1,8 +1,8 @@
 defaults:
   - base
 
-data_path: /data
-logging: False
+data_path: /tmp
+logging: True
 unlabeled: False
 
 model:
