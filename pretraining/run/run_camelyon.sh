@@ -1,9 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=dispatch-bt
-#SBATCH --partition=gpu-2d
+#SBATCH --partition=gpu-7d
 #SBATCH --gpus-per-node=40gb:1
-#SBATCH --ntasks-per-node=2
+#SBATCH --ntasks-per-node=4
 #SBATCH --output=logs/job-%j.out
+
+#SBATCH --array=1-3
 
 # 1. copy the squashed dataset to the nodes /tmp 
 rsync -ah --progress /home/myasincifci/data/camelyon17_unlabeled_v1.0.sqfs /temp/

@@ -18,7 +18,7 @@ disc:
     mult: 0.0
 
 trainer:
-    max_steps: 100_000
+    max_steps: 10_000
 
 logger:
     project: pretraining-pacs
