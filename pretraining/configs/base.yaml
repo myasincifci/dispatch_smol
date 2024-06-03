@@ -3,6 +3,10 @@ logging: True
 data_path: /data
 unlabeled: True
 
+data:
+    name: camelyon
+    path: /data
+
 model:
     pretrained: False
     projector_dim: 8_192

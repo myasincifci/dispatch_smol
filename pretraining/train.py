@@ -35,10 +35,13 @@ def main(cfg: DictConfig) -> None:
 
     L.seed_everything(42, workers=True)
 
-    # Data
-    data_module = CamelyonDM(cfg)
-    # data_module = RxRx1DM(cfg)
-    # data_module = PacsDM(cfg, leave_out=['sketch'])
+    # Data TODO: do properly
+    match cfg.data.name:
+        case 'camelyon':
+            data_module = CamelyonDM(cfg)
+        case 'pacs':
+            data_module = PacsDM(cfg, leave_out=['sketch'])
+        case _:
 
     # Model
     if cfg.model.pretrained:

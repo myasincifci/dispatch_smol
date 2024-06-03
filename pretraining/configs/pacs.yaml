@@ -5,6 +5,10 @@ data_path: /tmp
 logging: True
 unlabeled: False
 
+data:
+    name: pacs
+    path: /tmp
+
 model:
     pretrained: True
     projector_dim: 1_024
