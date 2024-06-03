@@ -1,4 +1,5 @@
 import os
+import random
 
 import hydra
 import pytorch_lightning as L
@@ -34,7 +35,9 @@ def main(cfg: DictConfig) -> None:
         )
         logger = WandbLogger()
 
-    L.seed_everything(42, workers=True)
+    seed = random.randint(0,9999999)
+    L.seed_everything(seed, workers=True)
+    print(f'Seed: {seed}')
 
     # Data
     data_module = CamelyonDM(cfg)
