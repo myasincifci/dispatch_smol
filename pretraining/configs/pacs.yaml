@@ -1,10 +1,28 @@
 defaults:
   - base
 
-data_path: /data/PACS
+data_path: /tmp
+logging: True
 unlabeled: False
-param:
-    batch_size: 512
-    projector_dim: 8_192
 
-name: PACS
+data:
+    name: pacs
+    path: /tmp
+
+model:
+    pretrained: True
+    projector_dim: 1_024
+
+param:
+    lr: 1e-4
+    batch_size: 128
+
+disc:
+    alpha: 0.0
+    mult: 0.0
+
+trainer:
+    max_steps: 10_000
+
+logger:
+    project: pretraining-pacs

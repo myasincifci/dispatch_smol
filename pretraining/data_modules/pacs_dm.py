@@ -1,3 +1,6 @@
+import os
+from typing import List
+
 from torch import tensor
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
@@ -7,27 +10,30 @@ from lightly.transforms.byol_transform import (BYOLTransform,
                                                BYOLView1Transform,
                                                BYOLView2Transform)
 from lightly.transforms.utils import IMAGENET_NORMALIZE
-from data_modules.pacs_dataset import PACSDataset
+from data_modules.pacs_h5_dataset import get_pacs_loo
 from utils import DomainMapper
 
 class PacsDM(pl.LightningDataModule):
-    def __init__(self, cfg, unlabeled=False) -> None:
+    def __init__(self, cfg, leave_out: List=None) -> None:
         super().__init__()
         self.data_dir = cfg.data_path
         self.batch_size = cfg.param.batch_size
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
+                T.ToPILImage(),
                 T.Resize(96),
                 BYOLView1Transform(input_size=96, gaussian_blur=0.0),
             ]),
             view_2_transform=T.Compose([
+                T.ToPILImage(),
                 T.Resize(96),
                 BYOLView2Transform(input_size=96, gaussian_blur=0.0),
             ])
         )
 
         self.val_transform = T.Compose([
+            T.ToPILImage(),
             T.Resize(96),
             T.ToTensor(),
             T.Normalize(
@@ -36,26 +42,28 @@ class PacsDM(pl.LightningDataModule):
             ),
         ])
 
-        self.labeled_dataset = PACSDataset(cfg.data_path, train=True, transform=self.train_transform)
+        self.train_set, self.test_set = get_pacs_loo(
+            root=cfg.data_path,
+            leave_out=leave_out,
+            train_tf=self.train_transform,
+            test_tf=self.val_transform
+        )
+
+        self.train_set_knn, self.test_set_knn = get_pacs_loo(
+            root=cfg.data_path,
+            leave_out=leave_out,
+            train_tf=self.val_transform,
+            test_tf=self.val_transform
+        )
 
         self.grouper = None
 
         self.cfg = cfg
         self.domain_mapper = DomainMapper()
-        self.num_classes = self.labeled_dataset.n_classes
+        self.num_classes = self.train_set.n_classes
 
     def setup(self, stage: str) -> None:
         if stage == 'fit':
-            train_set_labeled = self.labeled_dataset
-
-            self.train_set = train_set_labeled
-
-            self.val_set = PACSDataset(self.cfg.data_path, train=False, transform=self.val_transform)
-
-            self.train_set_knn = PACSDataset(self.cfg.data_path, train=True, transform=self.val_transform)
-
-            self.val_set_knn = self.val_set
-
             self.domain_mapper = self.domain_mapper.setup(
                 tensor(list(self.train_set.domains.values()))
             )
@@ -72,8 +80,9 @@ class PacsDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=False,
-            num_workers=32,
-            pin_memory=True
+            num_workers=8,
+            pin_memory=True,
+            # collate_fn=lambda x: x
         )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
@@ -82,16 +91,16 @@ class PacsDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=32,
+            num_workers=8,
             pin_memory=True
         )
 
         val_loader_knn = DataLoader(
-            self.val_set_knn,
+            self.test_set_knn,
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=32,
+            num_workers=8,
             pin_memory=True
         )
 

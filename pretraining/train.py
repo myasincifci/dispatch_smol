@@ -11,8 +11,9 @@ from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from torchvision import transforms as T
-from torchvision.models.resnet import ResNet50_Weights, resnet50
+from torchvision.models.resnet import ResNet50_Weights, resnet50, ResNet18_Weights, resnet18
 
+import random
 import wandb
 
 
@@ -33,12 +34,18 @@ def main(cfg: DictConfig) -> None:
         )
         logger = WandbLogger()
 
-    L.seed_everything(42, workers=True)
+    seed = random.randint(0,9999999)
+    L.seed_everything(seed, workers=True)
+    print(f'Seed:', seed)
 
-    # Data
-    data_module = CamelyonDM(cfg)
-    # data_module = RxRx1DM(cfg)
-    # data_module = PacsDM(cfg)
+    # Data TODO: do properly
+    match cfg.data.name:
+        case 'camelyon':
+            data_module = CamelyonDM(cfg)
+        case 'pacs':
+            data_module = PacsDM(cfg, leave_out=['sketch'])
+        case _:
+            raise Exception('Invalid Dataset')
 
     # Model
     if cfg.model.pretrained:
@@ -54,12 +61,14 @@ def main(cfg: DictConfig) -> None:
         domain_mapper=data_module.domain_mapper,
         cfg=cfg
     )
+    barlow_twins = barlow_twins
 
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,
         accelerator="auto",
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
+        log_every_n_steps=5
     )
 
     trainer.fit(
