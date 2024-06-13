@@ -13,6 +13,7 @@ from pytorch_lightning.loggers import WandbLogger
 from torchvision import transforms as T
 from torchvision.models.resnet import ResNet50_Weights, resnet50, ResNet18_Weights, resnet18
 
+import random
 import wandb
 
 
@@ -33,7 +34,9 @@ def main(cfg: DictConfig) -> None:
         )
         logger = WandbLogger()
 
-    L.seed_everything(42, workers=True)
+    seed = random.randint(0,9999999)
+    L.seed_everything(seed, workers=True)
+    print(f'Seed:', seed)
 
     # Data TODO: do properly
     match cfg.data.name:
@@ -42,6 +45,7 @@ def main(cfg: DictConfig) -> None:
         case 'pacs':
             data_module = PacsDM(cfg, leave_out=['sketch'])
         case _:
+            raise Exception('Invalid Dataset')
 
     # Model
     if cfg.model.pretrained:
