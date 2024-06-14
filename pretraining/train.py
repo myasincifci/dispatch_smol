@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from data_modules.camelyon17_dm import CamelyonDM
 from data_modules.pacs_dm import PacsDM
+from data_modules.domainnet_dm import DomainNetDM
 from data_modules.rxrx1_dm import RxRx1DM
 from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
@@ -44,6 +45,8 @@ def main(cfg: DictConfig) -> None:
             data_module = CamelyonDM(cfg)
         case 'pacs':
             data_module = PacsDM(cfg, leave_out=['sketch'])
+        case 'domainnet':
+            data_module = DomainNetDM(cfg)
         case _:
             raise Exception('Invalid Dataset')
 

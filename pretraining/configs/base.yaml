@@ -1,7 +1,7 @@
 name: Base
 logging: True
 data_path: /data
-unlabeled: True
+unlabeled: False
 
 data:
     name: camelyon
