@@ -1,0 +1,24 @@
+defaults:
+  - base
+
+name: DomainNet
+unlabeled: False
+
+data:
+    name: domainnet
+    num_workers: 4
+
+param:
+    lr: 1e-4
+    batch_size: 512
+
+disc:
+    alpha: 0.0
+    mult: 0.0
+
+trainer:
+    cos_decay: True
+    warmup: 10_000
+
+logger:
+    project: pretraining-domainnet

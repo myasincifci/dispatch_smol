@@ -46,16 +46,16 @@ class DomainNetDM(pl.LightningDataModule):
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
-                BYOLView1Transform(input_size=96, gaussian_blur=0.0), # TODO: adjust input size
+                BYOLView1Transform(input_size=200, gaussian_blur=0.0), # TODO: adjust input size
             ]),
             view_2_transform=T.Compose([
-                BYOLView2Transform(input_size=96, gaussian_blur=0.0), # TODO: adjust input size
+                BYOLView2Transform(input_size=200, gaussian_blur=0.0), # TODO: adjust input size
             ])
         )
 
         self.val_transform = T.Compose([
             T.ToTensor(),
-            SquarePadResize(128),
+            SquarePadResize(200),
             T.Normalize(
                 mean=IMAGENET_NORMALIZE["mean"],
                 std=IMAGENET_NORMALIZE["std"],
@@ -126,19 +126,19 @@ class DomainNetDM(pl.LightningDataModule):
 
             self.val_set_knn_id = self.labeled_dataset.get_subset(
                 "id_test",
-                frac=1024/len(self.val_set_id), 
+                frac=2048/len(self.val_set_id), 
                 transform=self.val_transform
             )
 
             self.val_set_knn = self.labeled_dataset.get_subset(
                 "val", 
-                frac=1024/len(self.val_set), 
+                frac=2048/len(self.val_set), 
                 transform=self.val_transform
             )
 
             self.test_set_knn = self.labeled_dataset.get_subset(
                 "test",
-                frac=1024/len(self.test_set),
+                frac=2048/len(self.test_set),
                 transform=self.val_transform
             )
 
@@ -158,7 +158,7 @@ class DomainNetDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=False,
-            num_workers=8,
+            num_workers=self.cfg.data.num_workers,
             pin_memory=True
         )
     
@@ -168,7 +168,7 @@ class DomainNetDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=self.cfg.data.num_workers,
             pin_memory=True
         )
 
@@ -177,7 +177,7 @@ class DomainNetDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=self.cfg.data.num_workers,
             pin_memory=True
         )
 
@@ -186,7 +186,7 @@ class DomainNetDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=self.cfg.data.num_workers,
             pin_memory=True
         )
 
@@ -195,7 +195,7 @@ class DomainNetDM(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=8,
+            num_workers=self.cfg.data.num_workers,
             pin_memory=True
         )
 
