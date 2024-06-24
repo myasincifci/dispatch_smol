@@ -66,6 +66,9 @@ def main(cfg: DictConfig) -> None:
     )
     barlow_twins = barlow_twins
 
+    for param in barlow_twins.backbone.parameters():
+        param.requires_grad = False
+
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,
         accelerator="auto",

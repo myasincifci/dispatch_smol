@@ -4,13 +4,16 @@ defaults:
 name: DomainNet
 unlabeled: False
 
+model:
+    pretrained: True
+
 data:
     name: domainnet
     num_workers: 4
 
 param:
     lr: 1e-4
-    batch_size: 512
+    batch_size: 2
 
 disc:
     alpha: 0.0
