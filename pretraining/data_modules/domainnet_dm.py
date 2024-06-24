@@ -40,9 +40,6 @@ class SquarePadResize(torch.nn.Module):
 class DomainNetDM(pl.LightningDataModule):
     def __init__(self, cfg, unlabeled=False) -> None:
         super().__init__()
-        self.data_dir = cfg.data.path
-        self.unlabeled = cfg.unlabeled
-        self.batch_size = cfg.param.batch_size
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
@@ -62,56 +59,40 @@ class DomainNetDM(pl.LightningDataModule):
             ),
         ])
 
-        self.labeled_dataset = get_dataset(
-            dataset=cfg.data.name,
+    def setup(self, stage: str) -> None:
+        self.dataset = get_dataset(
+            dataset=self.cfg.data.name,
             download=True, 
             root_dir=self.data_dir, 
             unlabeled=False
         )
 
-        if self.unlabeled:
-            self.unlabeled_dataset = get_dataset(
-                dataset=cfg.data.name,
-                download=True, 
-                root_dir=self.data_dir, 
-                unlabeled=True
-            )
+        self.grouper = CombinatorialGrouper(self.dataset, ['domain']) # TODO: fix name of domain
 
-        self.grouper = CombinatorialGrouper(self.labeled_dataset, ['domain'])
-
-        self.cfg = cfg
         self.domain_mapper = DomainMapper().setup(
             self.labeled_dataset.get_subset("train").metadata_array[:, 0]
         )
 
         self.num_classes = self.labeled_dataset.n_classes
 
-    def setup(self, stage: str) -> None:
+        
         if stage == 'fit':
-            train_set_labeled = self.labeled_dataset.get_subset(
+            train_set = self.dataset.get_subset(
                     "train", 
                     transform=self.train_transform
             )
 
-            if self.unlabeled:
-                self.train_set = self.unlabeled_dataset.get_subset(
-                    "train_unlabeled", 
-                    transform=self.train_transform
-                )
-            else:
-                self.train_set = train_set_labeled
-
-            self.val_set_id = self.labeled_dataset.get_subset(
+            self.val_set_id = self.dataset.get_subset(
                 "id_test", 
                 transform=self.val_transform
             )
 
-            self.val_set = self.labeled_dataset.get_subset(
+            self.val_set_ood = self.dataset.get_subset(
                 "val", 
                 transform=self.val_transform
             )
 
-            self.test_set = self.labeled_dataset.get_subset(
+            self.test_set_ood = self.dataset.get_subset(
                 "test",
                 transform=self.val_transform
             )
@@ -141,10 +122,6 @@ class DomainNetDM(pl.LightningDataModule):
                 frac=2048/len(self.test_set),
                 transform=self.val_transform
             )
-
-            # self.domain_mapper = self.domain_mapper.setup(
-            #     train_set_labeled.metadata_array[:, 0]
-            # )
             
         elif stage == 'test':
             pass
