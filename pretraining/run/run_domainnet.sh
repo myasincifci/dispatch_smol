@@ -3,7 +3,7 @@
 #SBATCH --partition=gpu-2h
 #SBATCH --gpus-per-node=40gb:1
 
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-node=8
 
 #SBATCH --output=logs/job-%j.out
 
