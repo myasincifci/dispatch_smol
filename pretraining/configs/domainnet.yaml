@@ -2,10 +2,12 @@ defaults:
   - base
 
 name: DomainNet
+logging: False
 unlabeled: False
 
 model:
-    pretrained: True
+    pretrained: False
+    projector_dim: 8_192
 
 data:
     name: domainnet
@@ -13,7 +15,7 @@ data:
 
 param:
     lr: 1e-4
-    batch_size: 2
+    batch_size: 512
 
 disc:
     alpha: 0.0
