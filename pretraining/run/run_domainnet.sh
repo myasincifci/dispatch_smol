@@ -1,9 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=dp-domainnet
-#SBATCH --partition=gpu-2h
-#SBATCH --gpus-per-node=40gb:1
+#SBATCH --partition=gpu-7d
+#SBATCH --gpus-per-node=80gb:1
 
-#SBATCH --ntasks-per-node=8
+#SBATCH --ntasks-per-node=4
+#SBATCH --mem=256G 
+#SBATCH --exclude=head024
 
 #SBATCH --output=logs/job-%j.out
 

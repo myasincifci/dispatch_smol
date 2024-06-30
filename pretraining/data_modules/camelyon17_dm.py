@@ -19,10 +19,22 @@ class CamelyonDM(pl.LightningDataModule):
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
-                BYOLView1Transform(input_size=96, gaussian_blur=0.0),
+                BYOLView1Transform(
+                    input_size=96, 
+                    gaussian_blur=0.0,
+                    cj_prob=0.0,
+                    random_gray_scale=0.0,
+                    solarization_prob=0.0
+                ),
             ]),
             view_2_transform=T.Compose([
-                BYOLView2Transform(input_size=96, gaussian_blur=0.0),
+                BYOLView2Transform(
+                    input_size=96, 
+                    gaussian_blur=0.0,
+                    cj_prob=0.0,
+                    random_gray_scale=0.0,
+                    solarization_prob=0.0
+                ),
             ])
         )
 
