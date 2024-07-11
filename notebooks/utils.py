@@ -86,10 +86,12 @@ def get_backbone_from_ckpt(ckpt_path: str) -> torch.nn.Module:
     return state_dict
 
 class DomainMapper():
-    def __init__(self, domains: List) -> None:
+    def setup(self, domains: List):
         self.unique_domains = domains.unique()
         self.map_dict: Dict = {self.unique_domains[i].item():i for i in range(len(self.unique_domains))}
         self.unmap_dict: Dict = dict((v, k) for k, v in self.map_dict.items())
+
+        return self
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         return self.map(x)

@@ -11,5 +11,6 @@
 *.hdf5
 __pycache__/
 *.pyc
+*.ckpt
 
 conditional_neighbors/models
