@@ -4,57 +4,50 @@ from typing import List
 from torch import tensor
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
-from torchvision import transforms as T
+from torchvision.transforms import v2 as T
 import pytorch_lightning as pl
 from lightly.transforms.byol_transform import (BYOLTransform,
                                                BYOLView1Transform,
                                                BYOLView2Transform)
 from lightly.transforms.utils import IMAGENET_NORMALIZE
-from data_modules.pacs_h5_dataset import get_pacs_loo
+from data_modules.pacs_h5_dataset import PACSDataset, BYOLViewTransform
 from utils import DomainMapper
 
 class PacsDM(pl.LightningDataModule):
-    def __init__(self, cfg, leave_out: List=None) -> None:
+    def __init__(self, cfg) -> None:
         super().__init__()
         self.data_dir = cfg.data_path
         self.batch_size = cfg.param.batch_size
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
-                T.ToPILImage(),
                 T.Resize(96),
-                BYOLView1Transform(input_size=96, gaussian_blur=0.0),
+                BYOLViewTransform(
+                    input_size=96
+                ),
             ]),
             view_2_transform=T.Compose([
-                T.ToPILImage(),
                 T.Resize(96),
-                BYOLView2Transform(input_size=96, gaussian_blur=0.0),
+                BYOLViewTransform(
+                    input_size=96,
+                    gaussian_blur=0.1,
+                    solarization_prob=0.2
+                ),
             ])
         )
 
         self.val_transform = T.Compose([
-            T.ToPILImage(),
-            T.Resize(96),
-            T.ToTensor(),
             T.Normalize(
                 mean=IMAGENET_NORMALIZE["mean"],
                 std=IMAGENET_NORMALIZE["std"],
             ),
         ])
 
-        self.train_set, self.test_set = get_pacs_loo(
-            root=cfg.data_path,
-            leave_out=leave_out,
-            train_tf=self.train_transform,
-            test_tf=self.val_transform
-        )
+        self.train_set = PACSDataset(cfg.data_path, train=True, transform=self.train_transform)
+        self.test_set = PACSDataset(cfg.data_path, train=False, transform=self.val_transform)
 
-        self.train_set_knn, self.test_set_knn = get_pacs_loo(
-            root=cfg.data_path,
-            leave_out=leave_out,
-            train_tf=self.val_transform,
-            test_tf=self.val_transform
-        )
+        self.train_set_knn = PACSDataset(cfg.data_path, train=True, transform=self.val_transform)
+        self.test_set_knn = PACSDataset(cfg.data_path, train=False, transform=self.val_transform)
 
         self.grouper = None
 
@@ -82,7 +75,7 @@ class PacsDM(pl.LightningDataModule):
             drop_last=False,
             num_workers=8,
             pin_memory=True,
-            # collate_fn=lambda x: x
+            collate_fn=lambda x: x
         )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
@@ -92,7 +85,8 @@ class PacsDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=8,
-            pin_memory=True
+            pin_memory=True,
+            collate_fn=lambda x: x
         )
 
         val_loader_knn = DataLoader(
@@ -101,7 +95,8 @@ class PacsDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=8,
-            pin_memory=True
+            pin_memory=True,
+            collate_fn=lambda x: x
         )
 
         return [
@@ -110,7 +105,7 @@ class PacsDM(pl.LightningDataModule):
         ]
     
 def main():
-    pass
+    pass 
 
 if __name__ == '__main__':
     main()

@@ -40,9 +40,9 @@ def main(cfg: DictConfig) -> None:
     print(f'Seed: {seed}')
 
     # Data
-    data_module = CamelyonDM(cfg)
+    # data_module = CamelyonDM(cfg)
     # data_module = RxRx1DM(cfg)
-    # data_module = PacsDM(cfg, leave_out=['sketch'])
+    data_module = PacsDM(cfg,)
 
     # Model
     if cfg.model.pretrained:

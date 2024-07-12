@@ -1,7 +1,7 @@
 defaults:
   - base
 
-data_path: /tmp
+data_path: /data
 logging: True
 unlabeled: False
 
