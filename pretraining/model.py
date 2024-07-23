@@ -61,7 +61,7 @@ class BarlowTwins(L.LightningModule):
         scheduler = {
             "scheduler": torch.optim.lr_scheduler.LambdaLR(
                 optimizer,
-                self._linear_warmup_decay(1000),
+                self._linear_warmup_decay(250*10),
             ),
             "interval": "step",
             "frequency": 1,
