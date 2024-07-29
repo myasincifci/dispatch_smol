@@ -103,7 +103,7 @@ def get_pacs_loo(root, leave_out=None, train_tf=None, test_tf=None):
 
 def main():
     train_set, test_set = get_pacs_loo(
-        '../data',
+        '/data',
         leave_out=['sketch'],
     )
 
