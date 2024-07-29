@@ -16,8 +16,8 @@
             "name": "Pretrain",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/yasin/notebooks/dispatch_smol/pretraining/train.py",
-            "cwd": "/home/yasin/notebooks/dispatch_smol/pretraining",
+            "program": "/home/yasin/repos/dispatch_smol/pretraining/train.py",
+            "cwd": "/home/yasin/repos/dispatch_smol/pretraining",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
@@ -29,8 +29,8 @@
             "name": "Finetune",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/yasin/notebooks/dispatch_smol/finetuning/train.py",
-            "cwd": "/home/yasin/notebooks/dispatch_smol/finetuning",
+            "program": "/home/yasin/repos/dispatch_smol/finetuning/train.py",
+            "cwd": "/home/yasin/repos/dispatch_smol/finetuning",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [

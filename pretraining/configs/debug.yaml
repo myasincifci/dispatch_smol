@@ -5,16 +5,12 @@ logging: False
 unlabeled: False
 
 model:
-    pretrained: False
-    projector_dim: 128
+    pretrained: True
+    projector_dim: 1_024
 
 param:
-    lr: 5e-4
+    lr: 1e-4
     batch_size: 128
-
-disc:
-    alpha: 1.0
-    mult: 0.5
 
 logger:
     project: pretraining-pacs

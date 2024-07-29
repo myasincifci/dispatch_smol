@@ -10,13 +10,14 @@ from lightly.transforms.byol_transform import (BYOLTransform,
                                                BYOLView1Transform,
                                                BYOLView2Transform)
 from lightly.transforms.utils import IMAGENET_NORMALIZE
-from data_modules.pacs_h5_dataset import get_pacs_loo
-from utils import DomainMapper
+from data_modules.image_dataset import ImageDataset
+
+import json
 
 class PacsDM(pl.LightningDataModule):
-    def __init__(self, cfg, leave_out: List=None) -> None:
+    def __init__(self, cfg) -> None:
         super().__init__()
-        self.data_dir = cfg.data_path
+        self.data_dir = os.path.join(cfg.data_path, 'PACS')
         self.batch_size = cfg.param.batch_size
 
         self.train_transform = BYOLTransform(
@@ -39,27 +40,43 @@ class PacsDM(pl.LightningDataModule):
             ),
         ])
 
-        self.train_set, self.test_set = get_pacs_loo(
-            root=cfg.data_path,
-            leave_out=leave_out,
-            train_tf=self.train_transform,
-            test_tf=self.val_transform
-        )
+        train_split_path = '/home/yasin/repos/dispatch_smol/pretraining/data_modules/train.json'
+        test_split_path = '/home/yasin/repos/dispatch_smol/pretraining/data_modules/test.json'
+        with open(train_split_path) as f:
+            train_set_map = json.load(f)
+            f.close()
+        with open(test_split_path) as f:
+            test_set_map = json.load(f)
+            f.close()
 
-        self.train_set_knn, self.test_set_knn = get_pacs_loo(
-            root=cfg.data_path,
-            leave_out=leave_out,
-            train_tf=self.val_transform,
-            test_tf=self.val_transform
-        )
+        self.classes = {
+            'dog': 0, 
+            'giraffe': 1, 
+            'guitar': 2, 
+            'house': 3, 
+            'person': 4, 
+            'horse': 5, 
+            'elephant': 6
+        }
+
+        self.domains = {
+            'sketch': 0, 
+            'cartoon': 1, 
+            'art_painting': 2, 
+            'photo': 3
+        }
+
+        self.train_set = ImageDataset(self.data_dir, train_set_map, transform=self.train_transform, classes=self.classes, domains=self.domains)
+        self.test_set = ImageDataset(self.data_dir, test_set_map, transform=self.val_transform, classes=self.classes, domains=self.domains)
+
+        self.train_set_knn = ImageDataset(self.data_dir, train_set_map, transform=self.val_transform, classes=self.classes, domains=self.domains)
+        self.test_set_knn = ImageDataset(self.data_dir, test_set_map, transform=self.val_transform, classes=self.classes, domains=self.domains)
 
         self.grouper = None
 
         self.cfg = cfg
-        self.domain_mapper = DomainMapper().setup(
-            tensor(list(self.train_set.domains.values()))
-        )
-        self.num_classes = self.train_set.n_classes
+        self.domain_mapper = None
+        self.num_classes = len(self.classes)
 
     def setup(self, stage: str) -> None:
         if stage == 'fit':
@@ -78,8 +95,8 @@ class PacsDM(pl.LightningDataModule):
             shuffle=True,
             drop_last=False,
             num_workers=8,
+            persistent_workers=True,
             pin_memory=True,
-            # collate_fn=lambda x: x
         )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
@@ -89,6 +106,7 @@ class PacsDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=8,
+            persistent_workers=True,
             pin_memory=True
         )
 
@@ -98,6 +116,7 @@ class PacsDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=8,
+            persistent_workers=True,
             pin_memory=True
         )
 
@@ -107,7 +126,21 @@ class PacsDM(pl.LightningDataModule):
         ]
     
 def main():
-    pass
+    from omegaconf import DictConfig
+
+    cfg = DictConfig({
+        'data_path': '/data/PACS',
+        'param': {
+            'batch_size': 32
+        },
+
+    })
+
+    dm = PacsDM(cfg)
+    train_loader = dm.train_dataloader()
+
+    batch = next(iter(train_loader))
+    a=1
 
 if __name__ == '__main__':
     main()
