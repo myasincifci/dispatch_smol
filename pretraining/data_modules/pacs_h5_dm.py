@@ -21,16 +21,19 @@ class PacsDM(pl.LightningDataModule):
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
+                T.ToPILImage(),
                 T.Resize(96),
                 BYOLView1Transform(input_size=96, gaussian_blur=0.0),
             ]),
             view_2_transform=T.Compose([
+                T.ToPILImage(),
                 T.Resize(96),
                 BYOLView2Transform(input_size=96, gaussian_blur=0.0),
             ])
         )
 
         self.val_transform = T.Compose([
+            T.ToPILImage(),
             T.Resize(96),
             T.ToTensor(),
             T.Normalize(
