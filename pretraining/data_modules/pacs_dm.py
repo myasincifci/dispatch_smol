@@ -93,7 +93,7 @@ class PacsDM(pl.LightningDataModule):
             self.train_set,
             batch_size=self.batch_size,
             shuffle=True,
-            drop_last=False,
+            drop_last=True,
             num_workers=8,
             persistent_workers=True,
             pin_memory=True,

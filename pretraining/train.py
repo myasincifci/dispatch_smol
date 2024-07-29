@@ -12,6 +12,7 @@ from data_modules.rxrx1_dm import RxRx1DM
 from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import LearningRateMonitor
 from torchvision import transforms as T
 from torchvision.models.resnet import ResNet50_Weights, ResNet18_Weights
 from resnet_mix import resnet18, resnet50
@@ -66,16 +67,19 @@ def main(cfg: DictConfig) -> None:
         backbone=backbone,
         grouper=data_module.grouper,
         domain_mapper=data_module.domain_mapper,
-        cfg=cfg
+        cfg=cfg,
+        dm=data_module
     )
-    barlow_twins = barlow_twins
+
+    lr_monitor = LearningRateMonitor(logging_interval='step')
 
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,
         accelerator="auto",
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
-        log_every_n_steps=5
+        log_every_n_steps=5,
+        callbacks=[lr_monitor]
     )
 
     trainer.fit(

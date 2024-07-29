@@ -1,7 +1,7 @@
 defaults:
   - base
 
-logging: False
+logging: True
 unlabeled: False
 
 model:

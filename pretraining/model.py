@@ -4,6 +4,7 @@ from typing import Any
 import pytorch_lightning as L
 import torch
 import torch.optim as optim
+from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
 import torchmetrics
 from lightly.loss import BarlowTwinsLoss
 from lightly.models.barlowtwins import BarlowTwinsProjectionHead
@@ -14,7 +15,7 @@ from torch.autograd import Function
 from torch.nn import functional as F
 
 class BarlowTwins(L.LightningModule):
-    def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, dm, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
@@ -34,6 +35,7 @@ class BarlowTwins(L.LightningModule):
         self.cfg = cfg
 
         self.BS = cfg.param.batch_size
+        self.dm = dm
 
         self.accuracy = torchmetrics.classification.Accuracy(
             task="multiclass", num_classes=num_classes)
@@ -55,13 +57,23 @@ class BarlowTwins(L.LightningModule):
     def configure_optimizers(self) -> Any:
         optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
 
+        # scheduler = {
+        #     "scheduler": torch.optim.lr_scheduler.LambdaLR(
+        #         optimizer,
+        #         self._linear_warmup_decay(1000),
+        #     ),
+        #     "interval": "step",
+        #     "frequency": 1,
+        # }
+
         scheduler = {
-            "scheduler": torch.optim.lr_scheduler.LambdaLR(
-                optimizer,
-                self._linear_warmup_decay(1000),
+            "scheduler": self.get_linear_warmup_cos_annealing(
+                optimizer=optimizer,
+                warmup_iters=10*(len(self.dm.train_set)//self.cfg.param.batch_size),
+                total_iters=self.cfg.trainer.max_steps
             ),
             "interval": "step",
-            "frequency": 1,
+            "frequency": 1
         }
 
         return [optimizer], [scheduler]
@@ -74,6 +86,14 @@ class BarlowTwins(L.LightningModule):
 
     def _linear_warmup_decay(self, warmup_steps):
         return partial(self._fn, warmup_steps)
+    
+    def get_linear_warmup_cos_annealing(self, optimizer, warmup_iters, total_iters):
+        scheduler_warmup = LinearLR(optimizer, total_iters=warmup_iters)
+        scheduler_cos_decay = CosineAnnealingLR(optimizer, T_max=total_iters-warmup_iters)
+        scheduler = SequentialLR(optimizer, schedulers=[scheduler_warmup, 
+                                    scheduler_cos_decay], milestones=[warmup_iters])
+
+        return scheduler
 
     def on_validation_epoch_start(self) -> None:
         train, val, *_ = self.trainer.datamodule.val_dataloader()
