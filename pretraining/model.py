@@ -55,7 +55,7 @@ class BarlowTwins(L.LightningModule):
         return bt_loss
 
     def configure_optimizers(self) -> Any:
-        optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
+        optimizer = optim.Adam(params=self.parameters(), lr=self.lr,)
 
         # scheduler = {
         #     "scheduler": torch.optim.lr_scheduler.LambdaLR(

@@ -40,8 +40,8 @@ class PacsDM(pl.LightningDataModule):
             ),
         ])
 
-        train_split_path = '/home/yasin/repos/dispatch_smol/pretraining/data_modules/train.json'
-        test_split_path = '/home/yasin/repos/dispatch_smol/pretraining/data_modules/test.json'
+        train_split_path = '/home/myasincifci/dispatch_smol/pretraining/data_modules/train.json'
+        test_split_path = '/home/myasincifci/dispatch_smol/pretraining/data_modules/test.json'
         with open(train_split_path) as f:
             train_set_map = json.load(f)
             f.close()

@@ -12,5 +12,9 @@ param:
     lr: 1e-4
     batch_size: 128
 
+trainer:
+    max_steps: 35_000
+    check_val_every_n_epoch: 3
+
 logger:
     project: pretraining-pacs
