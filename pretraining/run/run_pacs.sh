@@ -7,6 +7,8 @@
 
 #SBATCH --array=0-0
 
+#SBATCH --array=1-10
+
 # 1. copy the squashed dataset to the nodes /tmp 
 rsync -ah --progress /home/myasincifci/data/PACS.sqfs /tmp/
 

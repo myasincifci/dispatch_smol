@@ -8,7 +8,8 @@ import torch.nn as nn
 from data_modules.camelyon17_dm import CamelyonDM
 # from pretraining.data_modules.pacs_h5_dm import PacsDM
 from data_modules.pacs_dm import PacsDM
-from data_modules.rxrx1_dm import RxRx1DM
+from data_modules.domainnet_dm import DomainNetDM
+
 from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
@@ -17,6 +18,7 @@ from torchvision import transforms as T
 from torchvision.models.resnet import ResNet50_Weights, ResNet18_Weights
 from resnet_mix import resnet18, resnet50
 
+import random
 import wandb
 
 
@@ -39,12 +41,18 @@ def main(cfg: DictConfig) -> None:
 
     seed = random.randint(0,9999999)
     L.seed_everything(seed, workers=True)
-    print(f'Seed: {seed}')
+    print(f'Seed:', seed)
 
-    # Data
-    # data_module = CamelyonDM(cfg)
-    # data_module = RxRx1DM(cfg)
-    data_module = PacsDM(cfg)
+    # Data TODO: do properly
+    match cfg.data.name:
+        case 'camelyon':
+            data_module = CamelyonDM(cfg)
+        case 'pacs':
+            data_module = PacsDM(cfg, leave_out=['sketch'])
+        case 'domainnet':
+            data_module = DomainNetDM(cfg)
+        case _:
+            raise Exception('Invalid Dataset')
 
     # Model
     if cfg.model.pretrained:

@@ -1,8 +1,11 @@
-defaults:
-  - base
-
-logging: True
+name: Debug
+logging: False
+data_path: /data
 unlabeled: False
+
+data:
+    name: domainnet
+    path: /data
 
 model:
     pretrained: True

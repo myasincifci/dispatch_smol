@@ -5,6 +5,10 @@ data_path: /tmp
 logging: True
 unlabeled: False
 
+data:
+    name: pacs
+    path: /tmp
+
 model:
     pretrained: True
     projector_dim: 1_024
@@ -16,6 +20,9 @@ param:
 trainer:
     max_steps: 10_000
     check_val_every_n_epoch: 1
+
+trainer:
+    max_steps: 10_000
 
 logger:
     project: pretraining-pacs
