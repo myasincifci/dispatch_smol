@@ -6,7 +6,6 @@ import pytorch_lightning as L
 import torch
 import torch.nn as nn
 from data_modules.camelyon17_dm import CamelyonDM
-# from pretraining.data_modules.pacs_h5_dm import PacsDM
 from data_modules.pacs_dm import PacsDM
 from data_modules.domainnet_dm import DomainNetDM
 

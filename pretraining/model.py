@@ -41,14 +41,13 @@ class BarlowTwins(L.LightningModule):
             task="multiclass", num_classes=num_classes)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        x0, x1 = batch['image']
+        (x0, x1), _, metadata = batch
 
         z0_, z1_ = self.backbone(x0).flatten(
             start_dim=1), self.backbone(x1).flatten(start_dim=1)
         z0, z1 = self.projection_head(z0_), self.projection_head(z1_)
 
         bt_loss = self.criterion(z0, z1)
-        crit_loss = 0.0
 
         self.log("bt-loss", bt_loss.item(), prog_bar=True)
 
@@ -56,15 +55,6 @@ class BarlowTwins(L.LightningModule):
 
     def configure_optimizers(self) -> Any:
         optimizer = optim.Adam(params=self.parameters(), lr=self.lr,)
-
-        # scheduler = {
-        #     "scheduler": torch.optim.lr_scheduler.LambdaLR(
-        #         optimizer,
-        #         self._linear_warmup_decay(1000),
-        #     ),
-        #     "interval": "step",
-        #     "frequency": 1,
-        # }
 
         scheduler = {
             "scheduler": self.get_linear_warmup_cos_annealing(
@@ -106,10 +96,10 @@ class BarlowTwins(L.LightningModule):
             (train_len,), dtype=torch.float32, device=self.device)
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
-        bs = len(batch['image'])
+        bs = len(batch[0])
 
         if dataloader_idx == 0:  # knn-train
-            X, t = batch['image'], batch['label']
+            X, t = batch[0], batch[1]
             X = X.to(self.device)
             t = t.to(self.device)
             z = self.backbone(X).squeeze()
@@ -119,7 +109,7 @@ class BarlowTwins(L.LightningModule):
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
         elif dataloader_idx > 0:  # knn-val
-            X, t = batch['image'], batch['label']
+            X, t = batch[0], batch[1]
             # torch.ones(self.BS, self.emb_dim).to(self.device)
             z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)

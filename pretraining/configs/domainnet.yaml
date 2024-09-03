@@ -5,21 +5,17 @@ name: DomainNet
 logging: True
 unlabeled: False
 
-model:
-    pretrained: False
-    projector_dim: 8_192
-
 data:
     name: domainnet
     num_workers: 4
 
+model:
+    pretrained: False
+    projector_dim: 8_192
+
 param:
     lr: 1e-4
-    batch_size: 512
-
-disc:
-    alpha: 0.0
-    mult: 0.0
+    batch_size: 1_024
 
 trainer:
     cos_decay: True
