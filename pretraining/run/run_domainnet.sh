@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=dp-domainnet
-#SBATCH --partition=gpu-7d
+#SBATCH --partition=gpu-9m
 #SBATCH --gpus-per-node=1
 #SBATCH --constraint="80gb|h100"
 

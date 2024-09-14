@@ -1,4 +1,6 @@
+import os
 import torch
+from torch.utils.data import random_split, Subset
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
@@ -63,44 +65,22 @@ class DomainNetDM(pl.LightningDataModule):
         ])
 
         self.dataset = DomainNetDataset(
-            download=False, 
-            root_dir=self.cfg.data.path, 
+            root=os.path.join(self.cfg.data.path, 'domainnet_v1.0'), 
         )
 
-        self.grouper = CombinatorialGrouper(self.dataset, ['domain'])
+        self.grouper = None # CombinatorialGrouper(self.dataset, ['domain'])
 
-        self.domain_mapper = DomainMapper().setup(
-            self.dataset.get_subset("train").metadata_array[:, 0]
-        )
+        self.domain_mapper = None# DomainMapper().setup(
+        #     self.dataset.get_subset("train").metadata_array[:, 0]
+        # )
 
         self.num_classes = self.dataset.n_classes
 
-    def setup(self, stage: str) -> None:
-
-        
-
-        
+    def setup(self, stage: str) -> None:        
         if stage == 'fit':
-            self.train_set = self.dataset.get_subset(
-                    "train", 
-                    transform=self.train_transform
-            )
+            self.train_set, self.val_set = random_split(self.dataset, lengths=(0.9,0.1))
 
-            self.knn_train_set = self.dataset.get_subset(
-                'train',
-                transform=self.val_transform,
-                frac=0.1
-            )
-
-            self.val_set_id = self.dataset.get_subset(
-                "id_test", 
-                transform=self.val_transform
-            )
-
-            self.val_set_ood = self.dataset.get_subset(
-                "val", 
-                transform=self.val_transform
-            )
+            self.knn_train_set = Subset(self.train_set, torch.randperm(len(self.train_set))[:60_000])
             
         elif stage == 'test':
             pass
@@ -127,16 +107,7 @@ class DomainNetDM(pl.LightningDataModule):
         )
 
         val_loader_id = DataLoader(
-            self.val_set_id,
-            batch_size=self.cfg.param.batch_size,
-            shuffle=False,
-            drop_last=False,
-            num_workers=self.cfg.data.num_workers,
-            pin_memory=True
-        )
-
-        val_loader_ood = DataLoader(
-            self.val_set_ood,
+            self.val_set,
             batch_size=self.cfg.param.batch_size,
             shuffle=False,
             drop_last=False,
@@ -147,7 +118,6 @@ class DomainNetDM(pl.LightningDataModule):
         return [
             train_loader_knn,
             val_loader_id,
-            val_loader_ood,
         ]
     
 def main():
