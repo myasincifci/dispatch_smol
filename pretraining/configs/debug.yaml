@@ -15,7 +15,7 @@ model:
 
 param:
     lr: 1e-4
-    batch_size: 64
+    batch_size: 32
 
 trainer:
     cos_decay: True

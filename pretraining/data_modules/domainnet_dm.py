@@ -2,7 +2,7 @@ import os
 import torch
 from torch.utils.data import random_split, Subset
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms as T
 from torchvision.transforms import functional as TF
 import pytorch_lightning as pl
@@ -40,6 +40,22 @@ class SquarePadResize(torch.nn.Module):
 
         return x
 
+class TransformDataset(Dataset):
+    def __init__(self, dataset, transform=None):
+        self.dataset = dataset
+        self.transform = transform
+
+    def __getitem__(self, index):
+        if self.transform:
+            x = self.transform(self.dataset[index]['image'])
+        else:
+            x = self.dataset[index]['image']
+        y = self.dataset[index]['label']
+        return dict(image=x, label=y)
+    
+    def __len__(self):
+        return len(self.dataset)
+
 class DomainNetDM(pl.LightningDataModule):
     def __init__(self, cfg, unlabeled=False) -> None:
         super().__init__()
@@ -74,13 +90,16 @@ class DomainNetDM(pl.LightningDataModule):
         #     self.dataset.get_subset("train").metadata_array[:, 0]
         # )
 
-        self.num_classes = self.dataset.n_classes
+        self.num_classes = self.dataset.num_classes
 
     def setup(self, stage: str) -> None:        
         if stage == 'fit':
-            self.train_set, self.val_set = random_split(self.dataset, lengths=(0.9,0.1))
+            train_set, val_set = random_split(self.dataset, lengths=(0.9,0.1))
+            self.train_set = TransformDataset(train_set, self.train_transform)
+            self.val_set = TransformDataset(val_set, self.val_transform)
 
-            self.knn_train_set = Subset(self.train_set, torch.randperm(len(self.train_set))[:60_000])
+            knn_train_set = Subset(train_set, torch.randperm(len(self.train_set))[:60_000])
+            self.knn_train_set = TransformDataset(knn_train_set, self.val_transform)
             
         elif stage == 'test':
             pass

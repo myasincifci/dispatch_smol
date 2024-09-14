@@ -41,7 +41,7 @@ class BarlowTwins(L.LightningModule):
             task="multiclass", num_classes=num_classes)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        (x0, x1), _, metadata = batch
+        (x0, x1) = batch["image"]
 
         z0_, z1_ = self.backbone(x0).flatten(
             start_dim=1), self.backbone(x1).flatten(start_dim=1)
@@ -96,10 +96,10 @@ class BarlowTwins(L.LightningModule):
             (train_len,), dtype=torch.float32, device=self.device)
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
-        bs = len(batch[0])
+        bs = len(batch['image'])
 
         if dataloader_idx == 0:  # knn-train
-            X, t = batch[0], batch[1]
+            X, t = batch['image'], batch['label']
             X = X.to(self.device)
             t = t.to(self.device)
             z = self.backbone(X).squeeze()
@@ -109,7 +109,8 @@ class BarlowTwins(L.LightningModule):
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
         elif dataloader_idx > 0:  # knn-val
-            X, t = batch[0], batch[1]
+            X, t = batch['image'], batch['label']
+
             # torch.ones(self.BS, self.emb_dim).to(self.device)
             z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)

@@ -2,7 +2,7 @@ import os
 from typing import List, Dict
 from PIL import Image
 from torch.utils.data import Dataset
-from domainnet_metadata import DOMAIN_NET_CLASSES, DOMAIN_NET_DOMAINS
+from .domainnet_metadata import DOMAIN_NET_CLASSES, DOMAIN_NET_DOMAINS
 
 class ImageDataset(Dataset):
     def __init__(self, set_map: List[Dict], transform=None) -> None:
