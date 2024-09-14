@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any
+from typing import Any, Mapping
 
 import pytorch_lightning as L
 import torch
@@ -13,6 +13,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor, nn
 from torch.autograd import Function
 from torch.nn import functional as F
+from sklearn.linear_model import LogisticRegression
 
 class BarlowTwins(L.LightningModule):
     def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, dm, *args: Any, **kwargs: Any) -> None:
@@ -94,11 +95,19 @@ class BarlowTwins(L.LightningModule):
             (train_len, self.emb_dim), dtype=torch.float32, device=self.device)
         self.train_targets = torch.zeros(
             (train_len,), dtype=torch.float32, device=self.device)
+        
+        self.clf = None
+
+    def on_validation_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        if dataloader_idx == 1 and batch_idx == 0:
+            print('Training Logistic Regression...')
+            self.clf = LogisticRegression(random_state=42).fit(self.train_features.detach().cpu(), self.train_targets.detach().cpu())
+
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
         bs = len(batch['image'])
 
-        if dataloader_idx == 0:  # knn-train
+        if dataloader_idx == 0:  # embed train features
             X, t = batch['image'], batch['label']
             X = X.to(self.device)
             t = t.to(self.device)
@@ -108,21 +117,24 @@ class BarlowTwins(L.LightningModule):
                                 self.BS:batch_idx*self.BS+bs] = z[:, :]
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
-        elif dataloader_idx > 0:  # knn-val
+        elif dataloader_idx > 0:  # validate
             X, t = batch['image'], batch['label']
 
             # torch.ones(self.BS, self.emb_dim).to(self.device)
             z = self.backbone(X).squeeze()
             z = F.normalize(z, dim=1)
-            y = knn_predict(
-                z,
-                self.train_features.T,
-                self.train_targets.to(torch.long),
-                self.num_classes,
-                self.knn_k,
-                self.knn_t,
-            )
+            # y = knn_predict(
+            #     z,
+            #     self.train_features.T,
+            #     self.train_targets.to(torch.long),
+            #     self.num_classes,
+            #     self.knn_k,
+            #     self.knn_t,
+            # )
 
-            self.accuracy(y[:, 0], t)
+            y = self.clf.predict(z.detach().cpu())
+            y = torch.from_numpy(y).to(self.device)
+
+            self.accuracy(y, t)
             self.log('val/accuracy', self.accuracy,
                      on_epoch=True, prog_bar=True)

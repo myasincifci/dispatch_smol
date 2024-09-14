@@ -86,7 +86,7 @@ def main(cfg: DictConfig) -> None:
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
         log_every_n_steps=5,
-        callbacks=[lr_monitor]
+        callbacks=[lr_monitor],
     )
 
     trainer.fit(
