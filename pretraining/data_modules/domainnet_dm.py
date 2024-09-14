@@ -46,16 +46,16 @@ class DomainNetDM(pl.LightningDataModule):
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
-                BYOLView1Transform(input_size=128, gaussian_blur=0.0),
+                BYOLView1Transform(input_size=224, gaussian_blur=0.0),
             ]),
             view_2_transform=T.Compose([
-                BYOLView2Transform(input_size=128, gaussian_blur=0.0),
+                BYOLView2Transform(input_size=224, gaussian_blur=0.0),
             ])
         )
 
         self.val_transform = T.Compose([
             T.ToTensor(),
-            T.Resize((128, 128)),
+            T.Resize((224, 224)),
             T.Normalize(
                 mean=IMAGENET_NORMALIZE["mean"],
                 std=IMAGENET_NORMALIZE["std"],

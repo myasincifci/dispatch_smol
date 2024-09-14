@@ -10,16 +10,21 @@ data:
     num_workers: 4
 
 model:
-    pretrained: False
-    projector_dim: 8_192
+    pretrained: True
+    projector_dim: 4_096
 
 param:
-    lr: 1e-4
-    batch_size: 1_024
+    lr: 5e-4
+    batch_size: 256
 
 trainer:
+    max_steps: 500_000
+    check_val_every_n_epoch: 3
     cos_decay: True
-    warmup: 10_000
+    # warmup: 5_000
+
+mixstyle:
+    p: 0.0
 
 logger:
     project: pretraining-domainnet
