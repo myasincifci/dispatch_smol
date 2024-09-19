@@ -29,7 +29,7 @@ class ImageDataset(Dataset):
 
 class DomainNetDataset(ImageDataset):
     def __init__(self, root: str, transform=None) -> None:
-        domains = ['clipart', 'infograph', 'painting', 'quickdraw', 'real', 'sketch']
+        domains = ['painting', 'real', 'sketch']
         set_map = []
         for domain in domains:
             try:
