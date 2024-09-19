@@ -46,12 +46,15 @@ class TransformDataset(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
+        batch = self.dataset[index]
         if self.transform:
-            x = self.transform(self.dataset[index]['image'])
+            x = self.transform(batch['image'])
         else:
-            x = self.dataset[index]['image']
-        y = self.dataset[index]['label']
-        return dict(image=x, label=y)
+            x = batch['image']
+        y = batch['label']
+        d = batch['domain']
+
+        return dict(image=x, label=y, domain=d)
     
     def __len__(self):
         return len(self.dataset)
@@ -64,16 +67,16 @@ class DomainNetDM(pl.LightningDataModule):
 
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
-                BYOLView1Transform(input_size=224, gaussian_blur=0.0),
+                BYOLView1Transform(input_size=cfg.data.img_size, gaussian_blur=0.0),
             ]),
             view_2_transform=T.Compose([
-                BYOLView2Transform(input_size=224, gaussian_blur=0.0),
+                BYOLView2Transform(input_size=cfg.data.img_size, gaussian_blur=0.0),
             ])
         )
 
         self.val_transform = T.Compose([
             T.ToTensor(),
-            T.Resize((224, 224)),
+            T.Resize((cfg.data.img_size, cfg.data.img_size)),
             T.Normalize(
                 mean=IMAGENET_NORMALIZE["mean"],
                 std=IMAGENET_NORMALIZE["std"],
@@ -84,11 +87,8 @@ class DomainNetDM(pl.LightningDataModule):
             root=os.path.join(self.cfg.data.path, 'domainnet_v1.0'), 
         )
 
-        self.grouper = None # CombinatorialGrouper(self.dataset, ['domain'])
-
-        self.domain_mapper = None# DomainMapper().setup(
-        #     self.dataset.get_subset("train").metadata_array[:, 0]
-        # )
+        self.grouper = None
+        self.domain_mapper = None
 
         self.num_classes = self.dataset.num_classes
 
@@ -114,7 +114,8 @@ class DomainNetDM(pl.LightningDataModule):
             shuffle=True,
             drop_last=False,
             num_workers=self.cfg.data.num_workers,
-            pin_memory=True
+            pin_memory=True,
+            persistent_workers=True
         )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:   
@@ -122,7 +123,8 @@ class DomainNetDM(pl.LightningDataModule):
             self.knn_train_set,
             batch_size=self.cfg.param.batch_size,
             num_workers=self.cfg.data.num_workers,
-            pin_memory=True
+            pin_memory=True,
+            persistent_workers=True
         )
 
         val_loader_id = DataLoader(
@@ -131,7 +133,8 @@ class DomainNetDM(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=self.cfg.data.num_workers,
-            pin_memory=True
+            pin_memory=True,
+            persistent_workers=True
         )
 
         return [

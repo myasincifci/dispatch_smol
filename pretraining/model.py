@@ -80,7 +80,7 @@ class BarlowTwins(L.LightningModule):
     
     def get_linear_warmup_cos_annealing(self, optimizer, warmup_iters, total_iters):
         scheduler_warmup = LinearLR(optimizer, total_iters=warmup_iters, start_factor=1e-100)
-        scheduler_cos_decay = CosineAnnealingLR(optimizer, T_max=total_iters-warmup_iters)
+        scheduler_cos_decay = CosineAnnealingLR(optimizer, T_max=total_iters-warmup_iters, eta_min=self.cfg.param.lr/1000)
         scheduler = SequentialLR(optimizer, schedulers=[scheduler_warmup, 
                                     scheduler_cos_decay], milestones=[warmup_iters])
 

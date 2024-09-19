@@ -4,7 +4,7 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --constraint="80gb|h100"
 
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-node=32
 #SBATCH --mem=128G 
 
 #SBATCH --output=logs/job-%j.out

@@ -81,7 +81,7 @@ def main(cfg: DictConfig) -> None:
     lr_monitor = LearningRateMonitor(logging_interval='step')
 
     trainer = L.Trainer(
-        max_steps=cfg.trainer.max_steps,
+        max_epochs=cfg.trainer.max_epochs,
         accelerator="auto",
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
