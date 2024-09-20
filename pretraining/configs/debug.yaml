@@ -2,24 +2,31 @@ defaults:
   - base
 
 name: DomainNet
-logging: False
+logging: True
 unlabeled: False
 
 data:
     name: domainnet
-    num_workers: 4
+    num_workers: 8
+    img_size: 128
 
 model:
-    pretrained: False
+    pretrained: True
     projector_dim: 1_024
 
 param:
     lr: 1e-4
-    batch_size: 32
+    batch_size: 64
 
 trainer:
     cos_decay: True
     warmup: 10_000
+    max_epochs: 10
+
+
+head_pretrain:
+    active: True
+    lr: 1e-4
 
 logger:
-    project: pretraining-domainnet
+    project: pretraining-domainnet-head

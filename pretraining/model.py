@@ -15,14 +15,63 @@ from torch.autograd import Function
 from torch.nn import functional as F
 from sklearn.linear_model import LogisticRegression
 
+class HeadPretrain(L.LightningModule):
+    def __init__(self, backbone, cfg, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.backbone: nn.Module = backbone
+        self.emb_dim = [m for m in backbone.modules() if isinstance(m, torch.nn.Conv2d)][-1].out_channels
+
+        self.projection_head = BarlowTwinsProjectionHead(
+            self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
+
+        # Disable gradients for backbone parameters
+        self.backbone.requires_grad_(False)
+
+        # Disable batch-norm running mean/var
+        for _, module in self.backbone.named_modules():
+            if isinstance(module, torch.nn.BatchNorm2d):
+                module.eval()
+
+        self.criterion = BarlowTwinsLoss()
+
+        self.cfg = cfg
+
+    def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
+        (x0, x1) = batch["image"]
+
+        z0_, z1_ = self.backbone(x0).flatten(
+            start_dim=1), self.backbone(x1).flatten(start_dim=1)
+        z0, z1 = self.projection_head(z0_), self.projection_head(z1_)
+
+        bt_loss = self.criterion(z0, z1)
+
+        self.log("head/bt-loss", bt_loss.item(), prog_bar=True)
+
+        return bt_loss
+
+    def configure_optimizers(self) -> Any:
+        optimizer = optim.Adam(
+            params=self.parameters(), 
+            lr=self.cfg.head_pretrain.lr,
+        )
+
+        return [optimizer]
+
 class BarlowTwins(L.LightningModule):
-    def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, dm, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, num_classes, backbone, head_weights, grouper, domain_mapper, cfg, dm, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
         self.emb_dim = 2048
         self.projection_head = BarlowTwinsProjectionHead(
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
+        
+        if cfg.head_pretrain.active:
+            self.projection_head.load_state_dict(head_weights)
+
+            self.requires_grad_(True)
+            self.train()
 
         self.criterion = BarlowTwinsLoss()
         self.lr = cfg.param.lr
@@ -40,7 +89,7 @@ class BarlowTwins(L.LightningModule):
 
         self.accuracy = torchmetrics.classification.Accuracy(
             task="multiclass", num_classes=num_classes)
-
+        
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         (x0, x1) = batch["image"]
 
