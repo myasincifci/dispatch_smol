@@ -61,7 +61,8 @@ class BarlowTwins(L.LightningModule):
             "scheduler": self.get_linear_warmup_cos_annealing(
                 optimizer=optimizer,
                 warmup_iters=10*(len(self.dm.train_set)//self.cfg.param.batch_size),
-                total_iters=self.cfg.trainer.max_steps
+                # total_iters=self.cfg.trainer.max_steps
+                total_iters=self.cfg.trainer.max_epochs*(len(self.dm.train_set)//self.cfg.param.batch_size)
             ),
             "interval": "step",
             "frequency": 1
