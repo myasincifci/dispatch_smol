@@ -9,7 +9,7 @@ from data_modules.camelyon17_dm import CamelyonDM
 from data_modules.pacs_dm import PacsDM
 from data_modules.domainnet_dm import DomainNetDM
 
-from model import BarlowTwins
+from model import BarlowTwins, HeadPretrain
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
@@ -69,9 +69,29 @@ def main(cfg: DictConfig) -> None:
         )
     backbone.fc = nn.Identity()
 
+    if cfg.head_pretrain.active:
+        model = HeadPretrain(
+            backbone, cfg
+        )
+
+        trainer = L.Trainer(
+            max_epochs=1,
+            logger=logger,
+        )
+
+        trainer.fit(
+            model=model,
+            datamodule=data_module
+        )
+
+        head_weights = model.projection_head.state_dict()
+    else:
+        head_weights = None
+
     barlow_twins = BarlowTwins(
         num_classes=data_module.num_classes,
         backbone=backbone,
+        head_weights=head_weights,
         grouper=data_module.grouper,
         domain_mapper=data_module.domain_mapper,
         cfg=cfg,
@@ -85,7 +105,6 @@ def main(cfg: DictConfig) -> None:
         accelerator="auto",
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
-        log_every_n_steps=5,
         callbacks=[lr_monitor],
     )
 

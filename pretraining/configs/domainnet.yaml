@@ -11,8 +11,12 @@ data:
     img_size: 128
 
 model:
-    pretrained: False
+    pretrained: True
     projector_dim: 8_192
+
+head_pretrain:
+    active: True
+    lr: 1e-4
 
 param:
     lr: 5e-4
@@ -27,4 +31,4 @@ mixstyle:
     p: 0.0
 
 logger:
-    project: pretraining-domainnet
+    project: pretraining-domainnet-head
