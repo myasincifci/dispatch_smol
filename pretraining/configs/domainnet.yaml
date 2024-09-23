@@ -12,11 +12,11 @@ data:
 
 model:
     pretrained: True
-    projector_dim: 8_192
+    projector_dim: 4_096
 
 head_pretrain:
     active: True
-    lr: 1e-4
+    lr: 5e-4
 
 param:
     lr: 5e-4
@@ -24,7 +24,7 @@ param:
 
 trainer:
     max_epochs: 1_000
-    check_val_every_n_epoch: 10
+    check_val_every_n_epoch: 1
     cos_decay: True
 
 mixstyle:

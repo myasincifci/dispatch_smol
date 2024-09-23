@@ -29,9 +29,10 @@ class HeadPretrain(L.LightningModule):
         self.backbone.requires_grad_(False)
 
         # Disable batch-norm running mean/var
-        for _, module in self.backbone.named_modules():
-            if isinstance(module, torch.nn.BatchNorm2d):
-                module.eval()
+        self.backbone.eval()
+        # for _, module in self.backbone.named_modules():
+        #     if isinstance(module, torch.nn.BatchNorm2d):
+        #         module.eval()
 
         self.criterion = BarlowTwinsLoss()
 
@@ -71,7 +72,7 @@ class BarlowTwins(L.LightningModule):
             self.projection_head.load_state_dict(head_weights)
 
             self.requires_grad_(True)
-            self.train()
+            self.backbone.eval()
 
         self.criterion = BarlowTwinsLoss()
         self.lr = cfg.param.lr

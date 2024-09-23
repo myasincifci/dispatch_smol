@@ -75,7 +75,7 @@ def main(cfg: DictConfig) -> None:
         )
 
         trainer = L.Trainer(
-            max_epochs=1,
+            max_epochs=15,
             logger=logger,
         )
 
@@ -106,6 +106,7 @@ def main(cfg: DictConfig) -> None:
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
         callbacks=[lr_monitor],
+        num_sanity_val_steps=-1,
     )
 
     trainer.fit(
