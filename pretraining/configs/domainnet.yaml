@@ -24,8 +24,9 @@ param:
 
 trainer:
     max_epochs: 1_000
-    check_val_every_n_epoch: 1
+    check_val_every_n_epoch: 10
     cos_decay: True
+    warmup_epochs: 10
 
 mixstyle:
     p: 0.0

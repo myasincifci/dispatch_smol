@@ -26,10 +26,14 @@ class HeadPretrain(L.LightningModule):
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
 
         # Disable gradients for backbone parameters
-        self.backbone.requires_grad_(False)
+        for name, module in backbone.named_modules():
+            if not list(module.children()):
+                if not (isinstance(module, torch.nn.BatchNorm2d)):
+                    for param in module.parameters():
+                        param.requires_grad = False
 
         # Disable batch-norm running mean/var
-        self.backbone.eval()
+        # self.backbone.eval()
         # for _, module in self.backbone.named_modules():
         #     if isinstance(module, torch.nn.BatchNorm2d):
         #         module.eval()
@@ -72,7 +76,7 @@ class BarlowTwins(L.LightningModule):
             self.projection_head.load_state_dict(head_weights)
 
             self.requires_grad_(True)
-            self.backbone.eval()
+            # self.backbone.eval()
 
         self.criterion = BarlowTwinsLoss()
         self.lr = cfg.param.lr
@@ -110,7 +114,7 @@ class BarlowTwins(L.LightningModule):
         scheduler = {
             "scheduler": self.get_linear_warmup_cos_annealing(
                 optimizer=optimizer,
-                warmup_iters=10*(len(self.dm.train_set)//self.cfg.param.batch_size),
+                warmup_iters=self.cfg.trainer.warmup_epochs*(len(self.dm.train_set)//self.cfg.param.batch_size),
                 # total_iters=self.cfg.trainer.max_steps
                 total_iters=self.cfg.trainer.max_epochs*(len(self.dm.train_set)//self.cfg.param.batch_size)
             ),

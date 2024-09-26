@@ -345,4 +345,23 @@ DOMAIN_NET_CLASSES = [
     "zebra",
     "zigzag",
 ]
+
 DOMAIN_NET_DOMAINS = ["clipart", "infograph", "painting", "quickdraw", "real", "sketch"]
+
+DOMAIN_NET_DIVISIONS = {
+    "furniture": ["table", "teapot", "streetlight", "umbrella", "wine_glass", "stairs", "vase", "toothbrush", "suitcase", "toilet", "stove", "bed",
+        "toothpaste", "see_saw", "ladder", "bench", "pillow", "hot_tub", "fence", "door", "sleeping_bag", "fireplace", "lantern", "bath", "bathtub",
+        "couch", "swing_set", "sink", "mailbox", "postcard", "picture_frame", "floor_lamp", "chandelier", "chair", "dresser", "ceiling_fan"],
+    "mammal": ["squirrel", "dog", "whale", "tiger", "zebra", "sheep", "elephant", "horse", "cat", "raccoon", "monkey", "lion", "pig", "bear", "dolphin", 
+        "rabbit", "rhinoceros", "hedgehog", "giraffe", "kangaroo", "panda", "camel", "cow", "bat", "mouse"],
+    "tool": ["nail", "sword", "stethoscope", "skateboard", "dumbbell", "bottlecap", "shovel", "basket", "syringe", "broom", "rifle", "wheel", 
+        "screwdriver", "bandage", "pliers", "axe", "rake", "boomerang", "drill", "paint_can", "passport", "bucket", "stitches", "anvil", "hammer", 
+        "compass", "key", "saw"],
+    "cloth": ["shoe", "sock", "bracelet", "wristwatch", "bowtie", "necklace", "hat", "shorts", "eyeglasses", "helmet", "sweater", "rollerskates", 
+        "pants", "flip_flops", "underwear", "belt", "diamond", "purse", "jacket", "lipstick", "t-shirt", "crown", "camouflage"],
+    "electricity": ["spreadsheet", "toaster", "headphones", "washing_machine", "light_bulb", "television", "flashlight", "telephone", "microphone", 
+                    "megaphone", "keyboard", "laptop", "stereo", "power_outlet", "remote_control", "cell_phone", "camera", "cooler", "dishwasher", 
+                    "computer", "radio", "oven", "fan", "microwave", "calculator"],
+    "building": ["golf_club", "windmill", "lighthouse", "bridge", "pond", "garden", "tent", "The_Eiffel_Tower", "square", "skyscraper", "barn", 
+                 "waterslide", "pool", "castle", "house", "The_Great_Wall_of_China", "garden_hose", "diving_board", "church", "hospital", "jail"] 
+}
