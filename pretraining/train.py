@@ -75,7 +75,7 @@ def main(cfg: DictConfig) -> None:
         )
 
         trainer = L.Trainer(
-            max_epochs=15,
+            max_epochs=cfg.head_pretrain.epochs,
             logger=logger,
         )
 

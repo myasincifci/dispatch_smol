@@ -22,6 +22,8 @@ class HeadPretrain(L.LightningModule):
         self.backbone: nn.Module = backbone
         self.emb_dim = [m for m in backbone.modules() if isinstance(m, torch.nn.Conv2d)][-1].out_channels
 
+        self.backbone.mix.p = cfg.head_pretrain.mixstyle_p
+
         self.projection_head = BarlowTwinsProjectionHead(
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
 
@@ -68,6 +70,9 @@ class BarlowTwins(L.LightningModule):
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
+
+        self.backbone.mix.p = cfg.mixstyle.p
+
         self.emb_dim = 2048
         self.projection_head = BarlowTwinsProjectionHead(
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
