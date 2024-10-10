@@ -2,7 +2,7 @@ defaults:
   - base
 
 name: DomainNet
-logging: True
+logging: False
 unlabeled: False
 
 data:

@@ -28,24 +28,7 @@ class ImageDataset(Dataset):
         return dict(image=image, **sample)
 
 class DomainNetDataset(ImageDataset):
-    def __init__(self, root: str, transform=None) -> None:
-        domains = DOMAIN_NET_DOMAINS
-        set_map = []
-        for domain in domains:
-            try:
-                labels = os.listdir(os.path.join(root, domain))
-            except:
-                raise Exception(f'{domain} directory not found.')
-            for label in labels:
-                for image in os.listdir(os.path.join(root, domain, label)):
-                    set_map.append(
-                        dict(
-                            img_path=os.path.join(root, domain, label, image),
-                            label=label,
-                            domain=domain
-                            )
-                        )
-
+    def __init__(self, set_map: str, transform=None) -> None:
         super().__init__(set_map, transform)
 
         self.num_classes = len(DOMAIN_NET_CLASSES)
