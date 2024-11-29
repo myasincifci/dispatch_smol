@@ -83,13 +83,13 @@ class BarlowTwins(L.LightningModule):
                 group = self.domain_mapper(group)
                 group = group.to(self.device)
             else:
-                group = metadata
+                group = torch.cat([metadata, metadata], dim=0)
 
             z = ReverseLayerF.apply(z, self.cfg.disc.alpha)
 
             q = self.crit_clf(z)
 
-            crit_loss = self.crit_crit(q, group)
+            crit_loss = self.crit_crit(q, group.to(torch.long))
 
             self.log("crit-loss", crit_loss.item(), prog_bar=True)
 

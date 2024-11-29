@@ -35,7 +35,7 @@
             "justMyCode": false,
             "args": [
                 "--cfg-path",
-                "configs/camelyon/dann.yaml"
+                "configs/pacs/dann_no_col_ms.yaml"
             ]
         },
         {
