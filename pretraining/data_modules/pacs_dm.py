@@ -16,7 +16,7 @@ from utils import DomainMapper
 class PacsDM(pl.LightningDataModule):
     def __init__(self, cfg, leave_out: List=None) -> None:
         super().__init__()
-        self.data_dir = cfg.data_path
+        self.data_dir = cfg.data.path
         self.batch_size = cfg.param.batch_size
 
         self.train_transform = BYOLTransform(
@@ -43,14 +43,14 @@ class PacsDM(pl.LightningDataModule):
         ])
 
         self.train_set, self.test_set = get_pacs_loo(
-            root=cfg.data_path,
+            root=cfg.data.path,
             leave_out=leave_out,
             train_tf=self.train_transform,
             test_tf=self.val_transform
         )
 
         self.train_set_knn, self.test_set_knn = get_pacs_loo(
-            root=cfg.data_path,
+            root=cfg.data.path,
             leave_out=leave_out,
             train_tf=self.val_transform,
             test_tf=self.val_transform
@@ -60,6 +60,8 @@ class PacsDM(pl.LightningDataModule):
 
         self.cfg = cfg
         self.domain_mapper = DomainMapper()
+        self.domain_mapper.unique_domains = [0,1,2,3]
+
         self.num_classes = self.train_set.n_classes
 
     def setup(self, stage: str) -> None:

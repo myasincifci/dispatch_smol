@@ -1,4 +1,4 @@
-_BASE_: configs/camelyon/baseline.yaml
+_BASE_: configs/pacs/baseline.yaml
 
 name: PACS No.Col. MS
 

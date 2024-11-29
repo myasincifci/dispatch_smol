@@ -7,13 +7,11 @@
 
 #SBATCH --output=logs/job-%j.out
 
-#SBATCH --array=1-10
+#SBATCH --array=1-5
 
 # 1. copy the squashed dataset to the nodes /tmp 
 rsync -ah --progress /home/myasincifci/dispatch_smol/data/PACS.hdf5 /tmp
 
-ls /tmp
-
-apptainer run --nv \
+apptainer run --nv -B /tmp/PACS.hdf5:/data/PACS.hdf5 \
     /home/myasincifci/containers/main/main.sif \
-    python ./train.py --config-name pacs
+    python ./train.py --cfg-path configs/pacs/dann_no_col_ms.yaml
