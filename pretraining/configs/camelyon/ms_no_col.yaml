@@ -1,0 +1,9 @@
+_BASE_: configs/camelyon/baseline.yaml
+
+name: Camelyon No.Col. MS
+
+data:
+  color_aug: false
+
+mixstyle:
+  p: 0.7

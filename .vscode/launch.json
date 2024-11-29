@@ -22,7 +22,20 @@
             "justMyCode": false,
             "args": [
                 "--config-name",
-                "debug"
+                "camelyon/base"
+            ]
+        },
+        {
+            "name": "Pretrain Camelyon",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/yasin/repos/dispatch_smol/pretraining/train.py",
+            "cwd": "/home/yasin/repos/dispatch_smol/pretraining",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--cfg-path",
+                "configs/camelyon/dann.yaml"
             ]
         },
         {

@@ -13,18 +13,28 @@ from utils import DomainMapper
 class CamelyonDM(pl.LightningDataModule):
     def __init__(self, cfg, unlabeled=False) -> None:
         super().__init__()
-        self.data_dir = cfg.data_path
-        self.unlabeled = cfg.unlabeled
+        self.data_dir = cfg.data.path
+        self.unlabeled = cfg.data.unlabeled
         self.batch_size = cfg.param.batch_size
 
-        self.train_transform = BYOLTransform(
-            view_1_transform=T.Compose([
-                BYOLView1Transform(input_size=96, gaussian_blur=0.0),
-            ]),
-            view_2_transform=T.Compose([
-                BYOLView2Transform(input_size=96, gaussian_blur=0.0),
-            ])
-        )
+        if cfg.data.color_aug:
+            self.train_transform = BYOLTransform(
+                view_1_transform=T.Compose([
+                    BYOLView1Transform(input_size=96, gaussian_blur=0.0),
+                ]),
+                view_2_transform=T.Compose([
+                    BYOLView2Transform(input_size=96, gaussian_blur=0.0),
+                ])
+            )
+        else:
+            self.train_transform = BYOLTransform(
+                view_1_transform=T.Compose([
+                    BYOLView1Transform(input_size=96, cj_prob=0.0, random_gray_scale=0.0, solarization_prob=0.0, gaussian_blur=0.0),
+                ]),
+                view_2_transform=T.Compose([
+                    BYOLView2Transform(input_size=96, cj_prob=0.0, random_gray_scale=0.0, solarization_prob=0.0, gaussian_blur=0.0),
+                ])
+            )
 
         self.val_transform = T.Compose([
             T.ToTensor(),

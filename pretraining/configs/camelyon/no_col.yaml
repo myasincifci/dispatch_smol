@@ -1,0 +1,6 @@
+_BASE_: configs/camelyon/baseline.yaml
+
+name: Camelyon No.Col.
+
+data:
+  color_aug: false

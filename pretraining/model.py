@@ -61,7 +61,7 @@ class BarlowTwins(L.LightningModule):
             task="multiclass", num_classes=num_classes)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        if self.cfg.unlabeled:
+        if self.cfg.data.unlabeled:
             (x0, x1), metadata = batch
         else:
             (x0, x1), _, metadata = batch

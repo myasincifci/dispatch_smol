@@ -1,0 +1,10 @@
+_BASE_: configs/camelyon/baseline.yaml
+
+name: PACS No.Col. DANN
+
+data:
+  color_aug: false
+
+disc:
+  alpha: 1.0
+  mult: 10

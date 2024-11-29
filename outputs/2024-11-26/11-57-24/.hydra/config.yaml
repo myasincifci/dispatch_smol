@@ -1,0 +1,23 @@
+camelyon:
+  name: Camelyon Debug
+  logging: true
+  data_path: /data
+  unlabeled: false
+  data:
+    name: camelyon
+    path: /data
+  model:
+    pretrained: false
+    projector_dim: 8192
+  param:
+    lr: 0.0001
+    batch_size: 1024
+  disc:
+    alpha: 1.0
+    mult: 0
+  trainer:
+    max_steps: 150000
+    check_val_every_n_epoch: 1
+    warmup: 1000
+  logger:
+    project: pretraining-camelyon-baseline

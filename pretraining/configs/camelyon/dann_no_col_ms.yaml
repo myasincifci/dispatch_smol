@@ -1,0 +1,12 @@
+_BASE_: configs/camelyon/baseline.yaml
+
+name: Camelyon No.Col. DANN + MS
+
+data:
+  color_aug: false
+
+disc:
+  alpha: 0.1
+  
+mixstyle:
+  p: 0.7

@@ -1,0 +1,6 @@
+_BASE_: configs/camelyon/baseline.yaml
+
+name: Camelyon DANN
+
+disc:
+  alpha: 0.1
