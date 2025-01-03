@@ -19,7 +19,6 @@ disc:
     mult: 10.0
 
 mixstyle:
-    # TODO: implement
     active: False
     p: 1.0 
     alpha: 0.1

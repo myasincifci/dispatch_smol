@@ -13,11 +13,11 @@ data:
 
 model:
     pretrained: False
-    projector_dim: 512
+    projector_dim: 8_192
 
 param:
     lr: 1e-4
-    batch_size: 2
+    batch_size: 128
 
 disc:
     alpha: 0.0
