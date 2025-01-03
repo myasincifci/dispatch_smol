@@ -104,15 +104,13 @@ class DRDM(pl.LightningDataModule):
         )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
-        return DataLoader(
-            self.test_set,
-            batch_size=self.batch_size,
-            shuffle=False,
-            drop_last=False,
-            num_workers=8,
-            pin_memory=True,
-            persistent_workers=True
-        )
+        train_loader_knn = self.train_dataloader
+        val_loader_knn = self.val_dataloader
+
+        return [
+            train_loader_knn,
+            val_loader_knn
+        ]
     
 def main():
     pass

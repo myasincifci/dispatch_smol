@@ -22,7 +22,7 @@
             "justMyCode": false,
             "args": [
                 "--config-name",
-                "dr-yes-no-none"
+                "dr-yes-no-color"
             ]
         },
         {
