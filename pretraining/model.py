@@ -203,7 +203,7 @@ class BarlowTwins(L.LightningModule):
         return partial(self._fn, warmup_steps)
 
     def on_validation_epoch_start(self) -> None:
-        train = self.trainer.datamodule.train_dataloader()
+        train, val, *_ = self.trainer.datamodule.val_dataloader()
         train_len = train.dataset.__len__()
 
         self.train_features = torch.zeros(

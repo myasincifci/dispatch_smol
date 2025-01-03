@@ -1,6 +1,8 @@
 from typing import List
 
 import torch
+from torch.utils.data import Subset
+
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2 as T
@@ -75,6 +77,21 @@ class DRDM(pl.LightningDataModule):
             test_tf=self.val_transform
         )
 
+        train_set_knn, _ = get_loo_dr(
+            root=self.data_dir,
+            leave_out=leave_out,
+            train_tf=self.val_transform,
+            test_tf=self.val_transform
+        )
+        subset_size = 8_192
+        range_tensor = torch.arange(len(train_set_knn))
+
+        with torch.random.fork_rng():
+            torch.manual_seed(42)
+            indices = range_tensor[torch.randperm(len(range_tensor))[:subset_size]]
+        
+        self.train_set_knn = Subset(train_set_knn, indices)
+
         self.domain_mapper = DomainMapper()
 
         self.grouper = None
@@ -104,8 +121,25 @@ class DRDM(pl.LightningDataModule):
         )
     
     def val_dataloader(self) -> TRAIN_DATALOADERS:    
-        train_loader_knn = self.train_dataloader
-        val_loader_knn = self.val_dataloader
+        train_loader_knn = DataLoader(
+            self.train_set_knn,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=False,
+            num_workers=self.cfg.data.num_workers,
+            pin_memory=True,
+            persistent_workers=True
+        )
+        
+        val_loader_knn = DataLoader(
+            self.test_set,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=False,
+            num_workers=self.cfg.data.num_workers,
+            pin_memory=True,
+            persistent_workers=True
+        )
 
         return [
             train_loader_knn,
