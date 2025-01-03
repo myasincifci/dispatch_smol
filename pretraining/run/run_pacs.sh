@@ -14,4 +14,4 @@ rsync -ah --progress /home/myasincifci/dispatch_smol/data/PACS.hdf5 /tmp
 
 apptainer run --nv -B /tmp/PACS.hdf5:/data/PACS.hdf5 \
     /home/myasincifci/containers/main/main.sif \
-    python ./train.py --cfg-path configs/pacs/dann_no_col_ms.yaml
+    python ./train.py --cfg-path configs/pacs/no_col.yaml
