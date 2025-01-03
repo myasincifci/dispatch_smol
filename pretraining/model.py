@@ -16,6 +16,11 @@ from torch.nn import functional as F
 from torch.distributions.beta import Beta
 from torchvision.models.resnet import resnet50, ResNet50_Weights
 
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import cohen_kappa_score
+
 class ReverseLayerF(Function):
     @staticmethod
     def forward(ctx, x, alpha):
@@ -130,7 +135,7 @@ class BarlowTwins(L.LightningModule):
         self.lr = cfg.param.lr
 
         self.num_classes = num_classes
-        self.knn_k = 200
+        self.knn_k = 20
         self.knn_t = 0.1
 
         self.domain_mapper = domain_mapper
@@ -141,6 +146,9 @@ class BarlowTwins(L.LightningModule):
 
         self.accuracy = torchmetrics.classification.Accuracy(
             task="multiclass", num_classes=num_classes)
+        
+        self.top_3_accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass", num_classes=num_classes, top_k=3)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         if self.cfg.unlabeled:
@@ -205,46 +213,59 @@ class BarlowTwins(L.LightningModule):
     def on_validation_epoch_start(self) -> None:
         train, val, *_ = self.trainer.datamodule.val_dataloader()
         train_len = train.dataset.__len__()
+        val_len = val.dataset.__len__()
 
         self.train_features = torch.zeros(
             (train_len, self.emb_dim), dtype=torch.float32, device=self.device)
         self.train_targets = torch.zeros(
             (train_len,), dtype=torch.float32, device=self.device)
+        
+        self.val_features = torch.zeros(
+            (val_len, self.emb_dim), dtype=torch.float32, device=self.device)
+        self.val_targets = torch.zeros(
+            (val_len,), dtype=torch.float32, device=self.device)
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
         bs = len(batch[0])
 
-        if dataloader_idx == 0:  # knn-train
+        if dataloader_idx == 0:  # extract train features
             X, t, _ = batch
             X = X.to(self.device)
             t = t.to(self.device)
             z = self.backbone(X).squeeze()
-            z = F.normalize(z, dim=1)
+
+            # z = F.normalize(z, dim=1)
+            
             self.train_features[batch_idx *
                                 self.BS:batch_idx*self.BS+bs] = z[:, :]
             self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
-        elif dataloader_idx > 0:  # knn-val
+        elif dataloader_idx > 0:  # extract val features
             X, t, _ = batch
-            # torch.ones(self.BS, self.emb_dim).to(self.device)
+            X = X.to(self.device)
+            t = t.to(self.device)
             z = self.backbone(X).squeeze()
-            z = F.normalize(z, dim=1)
-            y = knn_predict(
-                z,
-                self.train_features.T,
-                self.train_targets.to(torch.long),
-                self.num_classes,
-                self.knn_k,
-                self.knn_t,
-            )
 
-            # self.correct += (y.argmax(dim=1) == t).to(torch.long).sum()
+            # z = F.normalize(z, dim=1)
+            
+            self.val_features[batch_idx *
+                                self.BS:batch_idx*self.BS+bs] = z[:, :]
+            self.val_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
-            self.accuracy(y[:, 0], t)
-            self.log('val/accuracy', self.accuracy,
-                     on_epoch=True, prog_bar=True)
+    def on_validation_epoch_end(self) -> None:
+        X_train, y_train = self.train_features.detach().cpu().numpy(), self.train_targets.detach().cpu().numpy()
+        X_val, y_val = self.val_features.detach().cpu().numpy(), self.val_targets.detach().cpu().numpy()
 
-    # def on_validation_epoch_end(self) -> None:
-    #     # acc = self.accuracy.compute()
-    #     # self.accuracy.reset()
-    #     print(self.correct/1024)
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('logistic', LogisticRegression())
+        ])
+
+        pipeline.fit(X_train, y_train)
+        score = pipeline.score(X_val, y_val)
+        y_pred = pipeline.predict(X_val)
+
+        kappa = cohen_kappa_score(y_val, y_pred)
+
+        self.log("val/accuracy", score, prog_bar=True)
+        self.log("val/kappa", kappa, prog_bar=True)

@@ -74,7 +74,8 @@ def main(cfg: DictConfig) -> None:
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,
         accelerator="auto",
-        check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
+        # check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
+        val_check_interval=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
         log_every_n_steps=5
     )
