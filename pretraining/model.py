@@ -1,5 +1,6 @@
 from functools import partial
 from typing import Any
+from types import MethodType
 
 import pytorch_lightning as L
 import torch
@@ -12,7 +13,8 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor, nn
 from torch.autograd import Function
 from torch.nn import functional as F
-
+from torch.distributions.beta import Beta
+from torchvision.models.resnet import resnet50, ResNet50_Weights
 
 class ReverseLayerF(Function):
     @staticmethod
@@ -27,6 +29,89 @@ class ReverseLayerF(Function):
 
         return output, None
 
+class MixStyle(nn.Module):
+    def __init__(self, p=0.5, alpha=0.1, eps=1e-6, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.p = p
+        self.alpha = alpha
+        self.eps = eps
+
+    def forward(self, x):
+        if not self.training:
+            return x
+        
+        if torch.rand(1).item() > self.p:
+            return x
+
+        B = x.size(0) # batch size
+
+        mu = x.mean(dim=[2, 3], keepdim=True) # compute instance mean
+        var = x.var(dim=[2, 3], keepdim=True) # compute instance variance
+        sig = (var + self.eps).sqrt() # compute instance standard deviation
+        mu, sig = mu.detach(), sig.detach() # block gradients
+        x_normed = (x - mu) / sig # normalize input
+
+        lmda = Beta(self.alpha, self.alpha).sample((B, 1, 1, 1)).to(x.device) # sample instance-wise convex weights
+
+        # if domain label is given:
+        if False:
+            # in this case, input x = [xˆi, xˆj]
+            perm = torch.arange(B-1, -1, -1) # inverse index
+            perm_j, perm_i = perm.chunk(2) # separate indices
+            perm_j = perm_j[torch.randperm(B // 2)] # shuffling
+            perm_i = perm_i[torch.randperm(B // 2)] # shuffling
+            perm = torch.cat([perm_j, perm_i], 0) # concatenation
+        else:
+            perm = torch.randperm(B) # generate shuffling indices
+
+        mu2, sig2 = mu[perm], sig[perm] # shuffling
+        mu_mix = mu * lmda + mu2 * (1 - lmda) # generate mixed mean
+        sig_mix = sig * lmda + sig2 * (1 - lmda) # generate mixed standard deviation
+
+        return x_normed * sig_mix + mu_mix # denormalize input using the mixed statistics
+
+def res50(cfg):
+    if cfg.model.pretrained:
+        model = resnet50(ResNet50_Weights.DEFAULT)
+    else:
+        model = resnet50()
+    model.fc = nn.Linear(in_features=512, out_features=cfg.data.num_classes, bias=True)
+    
+    if cfg.mixstyle.active:
+        model.ms = MixStyle(
+            p=cfg.mixstyle.p,
+            alpha=cfg.mixstyle.alpha,
+            eps=cfg.mixstyle.eps
+        )
+    else:
+        model.ms = None
+
+    def _forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.ms(x) if self.ms else x
+
+        x = self.layer2(x)
+        x = self.ms(x) if self.ms else x
+
+        x = self.layer3(x)
+        x = self.ms(x) if self.ms else x
+
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+
+        return x 
+    
+    model.forward = MethodType(_forward, model)
+
+    return model
 
 class BarlowTwins(L.LightningModule):
     def __init__(self, num_classes, backbone, grouper, domain_mapper, cfg, *args: Any, **kwargs: Any) -> None:
@@ -118,9 +203,8 @@ class BarlowTwins(L.LightningModule):
         return partial(self._fn, warmup_steps)
 
     def on_validation_epoch_start(self) -> None:
-        train, val, *_ = self.trainer.datamodule.val_dataloader()
+        train = self.trainer.datamodule.train_dataloader()
         train_len = train.dataset.__len__()
-        val_len = train.dataset.__len__()
 
         self.train_features = torch.zeros(
             (train_len, self.emb_dim), dtype=torch.float32, device=self.device)

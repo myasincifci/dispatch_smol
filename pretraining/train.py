@@ -4,15 +4,17 @@ import hydra
 import pytorch_lightning as L
 import torch
 import torch.nn as nn
+
 from data_modules.camelyon17_dm import CamelyonDM
 from data_modules.pacs_dm import PacsDM
 from data_modules.domainnet_dm import DomainNetDM
+from data_modules.dr_dm import DRDM
 
 from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from torchvision import transforms as T
-from torchvision.models.resnet import ResNet50_Weights, resnet50, ResNet18_Weights, resnet18
+from model import res50
 
 import random
 import wandb
@@ -47,14 +49,17 @@ def main(cfg: DictConfig) -> None:
             data_module = PacsDM(cfg, leave_out=['sketch'])
         case 'domainnet':
             data_module = DomainNetDM(cfg)
+        case 'dr':
+            data_module = DRDM(cfg, leave_out='aptos')
         case _:
             raise Exception('Invalid Dataset')
 
     # Model
-    if cfg.model.pretrained:
-        backbone = resnet50(ResNet50_Weights.DEFAULT)
-    else:
-        backbone = resnet50()
+    # if cfg.model.pretrained:
+    #     backbone = resnet50(ResNet50_Weights.DEFAULT)
+    # else:
+    #     backbone = resnet50()
+    backbone = res50(cfg)
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(

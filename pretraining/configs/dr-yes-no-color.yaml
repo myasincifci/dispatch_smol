@@ -1,0 +1,37 @@
+defaults:
+  - base
+
+name: DR
+logging: True
+unlabeled: False
+
+data:
+    name: dr
+    num_workers: 4
+    color_aug: true
+    num_classes: 5
+
+model:
+    pretrained: False
+    projector_dim: 512
+
+param:
+    lr: 1e-4
+    batch_size: 2
+
+disc:
+    alpha: 0.0
+    mult: 0.0
+
+mixstyle:
+    active: False
+    p: 1.0 
+    alpha: 0.1
+    eps: 1e-6
+
+trainer:
+    cos_decay: True
+    warmup: 10_000
+
+logger:
+    project: pretraining-dr  
