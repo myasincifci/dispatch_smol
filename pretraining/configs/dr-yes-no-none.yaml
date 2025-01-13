@@ -8,7 +8,7 @@ unlabeled: False
 data:
     name: dr
     num_workers: 4
-    color_aug: true
+    color_aug: false
     num_classes: 5
 
 model:

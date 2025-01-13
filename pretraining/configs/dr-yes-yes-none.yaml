@@ -8,7 +8,7 @@ unlabeled: False
 data:
     name: dr
     num_workers: 4
-    color_aug: true
+    color_aug: false
     num_classes: 5
 
 model:
@@ -20,11 +20,11 @@ param:
     batch_size: 256
 
 disc:
-    alpha: 0.0
-    mult: 0.0
+    alpha: 1.0
+    mult: 10.0
 
 mixstyle:
-    active: False
+    active: false
     p: 1.0 
     alpha: 0.1
     eps: 1e-6

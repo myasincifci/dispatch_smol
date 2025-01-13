@@ -173,13 +173,16 @@ class BarlowTwins(L.LightningModule):
                 group = self.domain_mapper(group)
                 group = group.to(self.device)
             else:
-                group = metadata
+                group = torch.cat([metadata, metadata], dim=0).squeeze()
 
             z = ReverseLayerF.apply(z, self.cfg.disc.alpha)
 
             q = self.crit_clf(z)
 
-            crit_loss = self.crit_crit(q, group)
+            # print('########', q.shape, group.shape)
+
+            # crit_loss = self.crit_crit(q, group)
+            crit_loss = self.crit_crit(q, group.to(torch.long))
 
             self.log("crit-loss", crit_loss.item(), prog_bar=True)
 
@@ -265,7 +268,7 @@ class BarlowTwins(L.LightningModule):
         score = pipeline.score(X_val, y_val)
         y_pred = pipeline.predict(X_val)
 
-        kappa = cohen_kappa_score(y_val, y_pred)
+        kappa = cohen_kappa_score(y_val, y_pred, weights='quadratic')
 
         self.log("val/accuracy", score, prog_bar=True)
         self.log("val/kappa", kappa, prog_bar=True)
