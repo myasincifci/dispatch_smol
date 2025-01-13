@@ -260,16 +260,17 @@ class BarlowTwins(L.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         X_train, y_train = self.features[0].detach().cpu().numpy(), self.targets[0].detach().cpu().numpy()
-        
+
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('logistic', LogisticRegression())
+        ])
+
+        pipeline.fit(X_train, y_train)
+
         for i, (val_features, val_targets) in enumerate(zip(self.features[1:], self.targets[1:])):
             X_val, y_val = val_features.detach().cpu().numpy(), val_targets.detach().cpu().numpy()
 
-            pipeline = Pipeline([
-                ('scaler', StandardScaler()),
-                ('logistic', LogisticRegression())
-            ])
-
-            pipeline.fit(X_train, y_train)
             score = pipeline.score(X_val, y_val)
             y_pred = pipeline.predict(X_val)
 

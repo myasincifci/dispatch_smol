@@ -94,7 +94,7 @@ class DRDM(pl.LightningDataModule):
             test_tf=self.val_transform
         )
 
-        subset_size = 4*8_192
+        subset_size = 2*8_192
         # range_tensor = torch.arange(len(self.train_set))
 
         # with torch.random.fork_rng():
