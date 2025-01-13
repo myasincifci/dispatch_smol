@@ -20,11 +20,11 @@ param:
     batch_size: 256
 
 disc:
-    alpha: 0.0
-    mult: 0.0
+    alpha: 1.0
+    mult: 10.0
 
 mixstyle:
-    active: False
+    active: false
     p: 1.0 
     alpha: 0.1
     eps: 1e-6
