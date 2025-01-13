@@ -4,13 +4,15 @@ import torch
 from torch.utils.data import Subset
 
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split, Subset
 from torchvision.transforms import v2 as T
 import pytorch_lightning as pl
 from lightly.transforms.byol_transform import (BYOLTransform,
                                                BYOLView1Transform,
                                                BYOLView2Transform)
 from data_modules.dr_dataset import get_loo_dr
+
+from sklearn.model_selection import train_test_split
 
 class DomainMapper():
     def __init__(self):
@@ -70,12 +72,20 @@ class DRDM(pl.LightningDataModule):
                 )
         ])
 
-        self.train_set, self.test_set = get_loo_dr(
+        train_set, self.val_set_ood = get_loo_dr(
             root=self.data_dir,
             leave_out=leave_out,
             train_tf=self.train_transform,
             test_tf=self.val_transform
         )
+
+        with torch.random.fork_rng():
+            torch.manual_seed(42)
+            indices = torch.randperm(len(train_set))
+        split_ratio = 0.8 
+        split_point = int(len(train_set) * split_ratio)
+        train_indices = indices[:split_point]
+        id_val_indices = indices[split_point:]
 
         train_set_knn, _ = get_loo_dr(
             root=self.data_dir,
@@ -83,21 +93,22 @@ class DRDM(pl.LightningDataModule):
             train_tf=self.val_transform,
             test_tf=self.val_transform
         )
-        subset_size = 8_192
-        range_tensor = torch.arange(len(train_set_knn))
 
-        with torch.random.fork_rng():
-            torch.manual_seed(42)
-            indices = range_tensor[torch.randperm(len(range_tensor))[:subset_size]]
+        subset_size = 4*8_192
+        # range_tensor = torch.arange(len(self.train_set))
+
+        # with torch.random.fork_rng():
+        #     torch.manual_seed(42)
+        #     indices = range_tensor[torch.randperm(len(range_tensor))[:subset_size]]
         
-        self.train_set_knn = Subset(train_set_knn, indices)
+        self.train_set = Subset(train_set, train_indices)
+        self.val_set_id = Subset(train_set_knn, id_val_indices)
+        self.train_set_knn = Subset(train_set_knn, train_indices[:subset_size])
 
         self.domain_mapper = DomainMapper()
-
         self.grouper = None
-
         self.cfg = cfg
-        self.num_classes = self.train_set.n_classes
+        self.num_classes = train_set.n_classes
 
     def setup(self, stage: str) -> None:
         if stage == 'fit':
@@ -130,9 +141,19 @@ class DRDM(pl.LightningDataModule):
             pin_memory=True,
             persistent_workers=True
         )
+
+        val_loader_knn_id = DataLoader(
+            self.val_set_id,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=False,
+            num_workers=self.cfg.data.num_workers,
+            pin_memory=True,
+            persistent_workers=True
+        )
         
-        val_loader_knn = DataLoader(
-            self.test_set,
+        val_loader_knn_ood = DataLoader(
+            self.val_set_ood,
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
@@ -143,7 +164,8 @@ class DRDM(pl.LightningDataModule):
 
         return [
             train_loader_knn,
-            val_loader_knn
+            val_loader_knn_id,
+            val_loader_knn_ood
         ]
     
 def main():

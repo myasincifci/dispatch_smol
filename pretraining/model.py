@@ -211,19 +211,24 @@ class BarlowTwins(L.LightningModule):
         return partial(self._fn, warmup_steps)
 
     def on_validation_epoch_start(self) -> None:
-        train, val, *_ = self.trainer.datamodule.val_dataloader()
-        train_len = train.dataset.__len__()
-        val_len = val.dataset.__len__()
+        loaders = self.trainer.datamodule.val_dataloader()
+        lengths = [len(loader.dataset) for loader in loaders]
 
-        self.train_features = torch.zeros(
-            (train_len, self.emb_dim), dtype=torch.float32, device=self.device)
-        self.train_targets = torch.zeros(
-            (train_len,), dtype=torch.float32, device=self.device)
+        # self.train_features = torch.zeros(
+        #     (train_len, self.emb_dim), dtype=torch.float32, device=self.device)
+        # self.train_targets = torch.zeros(
+        #     (train_len,), dtype=torch.float32, device=self.device)
         
-        self.val_features = torch.zeros(
-            (val_len, self.emb_dim), dtype=torch.float32, device=self.device)
-        self.val_targets = torch.zeros(
-            (val_len,), dtype=torch.float32, device=self.device)
+        self.features = []
+        self.targets = []
+        for loader, length in zip(loaders, lengths):
+            val_features = torch.zeros(
+                (length, self.emb_dim), dtype=torch.float32, device=self.device)
+            val_targets = torch.zeros(
+                (length,), dtype=torch.float32, device=self.device)
+
+            self.features.append(val_features)
+            self.targets.append(val_targets)
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0) -> None:
         bs = len(batch[0])
@@ -236,36 +241,36 @@ class BarlowTwins(L.LightningModule):
 
             # z = F.normalize(z, dim=1)
             
-            self.train_features[batch_idx *
+            self.features[dataloader_idx][batch_idx *
                                 self.BS:batch_idx*self.BS+bs] = z[:, :]
-            self.train_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
+            self.targets[dataloader_idx][batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
         elif dataloader_idx > 0:  # extract val features
             X, t, _ = batch
             X = X.to(self.device)
             t = t.to(self.device)
             z = self.backbone(X).squeeze()
-
-            # z = F.normalize(z, dim=1)
             
-            self.val_features[batch_idx *
+            self.features[dataloader_idx][batch_idx *
                                 self.BS:batch_idx*self.BS+bs] = z[:, :]
-            self.val_targets[batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
+            self.targets[dataloader_idx][batch_idx*self.BS:batch_idx*self.BS+bs] = t[:]
 
     def on_validation_epoch_end(self) -> None:
-        X_train, y_train = self.train_features.detach().cpu().numpy(), self.train_targets.detach().cpu().numpy()
-        X_val, y_val = self.val_features.detach().cpu().numpy(), self.val_targets.detach().cpu().numpy()
+        X_train, y_train = self.features[0].detach().cpu().numpy(), self.targets[0].detach().cpu().numpy()
+        
+        for i, (val_features, val_targets) in enumerate(zip(self.features[1:], self.targets[1:])):
+            X_val, y_val = val_features.detach().cpu().numpy(), val_targets.detach().cpu().numpy()
 
-        pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('logistic', LogisticRegression())
-        ])
+            pipeline = Pipeline([
+                ('scaler', StandardScaler()),
+                ('logistic', LogisticRegression())
+            ])
 
-        pipeline.fit(X_train, y_train)
-        score = pipeline.score(X_val, y_val)
-        y_pred = pipeline.predict(X_val)
+            pipeline.fit(X_train, y_train)
+            score = pipeline.score(X_val, y_val)
+            y_pred = pipeline.predict(X_val)
 
-        kappa = cohen_kappa_score(y_val, y_pred)
+            kappa = cohen_kappa_score(y_val, y_pred)
 
-        self.log("val/accuracy", score, prog_bar=True)
-        self.log("val/kappa", kappa, prog_bar=True)
+            self.log(f"val/{i}/accuracy", score, prog_bar=True)
+            self.log(f"val/{i}/kappa", kappa, prog_bar=True)
