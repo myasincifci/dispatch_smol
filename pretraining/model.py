@@ -146,9 +146,6 @@ class BarlowTwins(L.LightningModule):
 
         self.accuracy = torchmetrics.classification.Accuracy(
             task="multiclass", num_classes=num_classes)
-        
-        self.top_3_accuracy = torchmetrics.classification.Accuracy(
-            task="multiclass", num_classes=num_classes, top_k=3)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         if self.cfg.unlabeled:

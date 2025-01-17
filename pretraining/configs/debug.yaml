@@ -4,8 +4,11 @@ data_path: /data
 unlabeled: False
 
 data:
-    name: domainnet
+    name: camelyon
     path: /data
+    num_classes: 2
+
+    color_aug_fct: 1.0
 
 model:
     pretrained: False
@@ -19,6 +22,10 @@ disc:
     alpha: 0.0
     mult: 0.0
 
+mixstyle:
+    active: false
+
 trainer:
     max_steps: 50_000
     check_val_every_n_epoch: 1
+    warmup: 1_000

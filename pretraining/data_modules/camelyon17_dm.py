@@ -17,23 +17,31 @@ class CamelyonDM(pl.LightningDataModule):
         self.unlabeled = cfg.unlabeled
         self.batch_size = cfg.param.batch_size
 
+        ca_fct = cfg.data.color_aug_fct
+
         self.train_transform = BYOLTransform(
             view_1_transform=T.Compose([
                 BYOLView1Transform(
                     input_size=96, 
                     gaussian_blur=0.0,
-                    cj_prob=0.0,
-                    random_gray_scale=0.0,
-                    solarization_prob=0.0
+
+                    cj_strength=1.0 * ca_fct,
+                    cj_bright=0.4 * ca_fct,
+                    cj_contrast=0.4 * ca_fct,
+                    cj_sat=0.2 * ca_fct,
+                    cj_hue=0.1 * ca_fct,
                 ),
             ]),
             view_2_transform=T.Compose([
                 BYOLView2Transform(
                     input_size=96, 
                     gaussian_blur=0.0,
-                    cj_prob=0.0,
-                    random_gray_scale=0.0,
-                    solarization_prob=0.0
+
+                    cj_strength=1.0 * ca_fct,
+                    cj_bright=0.4 * ca_fct,
+                    cj_contrast=0.4 * ca_fct,
+                    cj_sat=0.2 * ca_fct,
+                    cj_hue=0.1 * ca_fct,
                 ),
             ])
         )
