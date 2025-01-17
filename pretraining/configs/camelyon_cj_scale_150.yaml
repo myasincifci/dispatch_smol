@@ -1,0 +1,38 @@
+defaults:
+  - base
+
+name: Camelyon CJ Scale
+logging: true
+unlabeled: true
+
+data:
+    name: camelyon
+    num_workers: 8
+    num_classes: 5
+    color_aug: true
+    color_aug_fct: 1.5
+
+model:
+    pretrained: False
+    projector_dim: 8_192
+
+param:
+    lr: 1e-4
+    batch_size: 1_024
+
+disc:
+    alpha: 0.0
+    mult: 0.0
+
+mixstyle:
+    active: False
+    p: 1.0 
+    alpha: 0.1
+    eps: 1e-6
+
+trainer:
+    max_steps: 150_000
+    warmup: 10_000
+
+logger:
+    project: pretraining-camelyon-cj-scale  
