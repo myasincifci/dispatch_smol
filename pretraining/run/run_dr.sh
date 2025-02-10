@@ -7,11 +7,11 @@
 #SBATCH --exclude=head075
 #SBATCH --mem=256G 
 
-#SBATCH --array=1-3
+#SBATCH --array=1-5
 
 # 1. copy the squashed dataset to the nodes /tmp 
 rsync -ah --progress /home/myasincifci/data/DR.sqfs /tmp
 
 apptainer run --nv -B /tmp/DR.sqfs:/data/DR:image-src=/ /home/myasincifci/containers/main/main.sif \
     python train.py \
-        --config-name dr-yes-yes-ms
+        --config-name dr_cj_scale_200

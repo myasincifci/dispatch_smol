@@ -13,6 +13,7 @@ from data_modules.dr_dm import DRDM
 from model import BarlowTwins
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import LearningRateMonitor
 from torchvision import transforms as T
 from model import res50
 
@@ -71,13 +72,15 @@ def main(cfg: DictConfig) -> None:
     )
     barlow_twins = barlow_twins
 
+    lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,
         accelerator="auto",
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         # val_check_interval=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
-        log_every_n_steps=5
+        log_every_n_steps=5,
+        callbacks=[lr_monitor]
     )
 
     trainer.fit(
