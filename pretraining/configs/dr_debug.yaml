@@ -5,6 +5,8 @@ name: DR
 logging: true
 unlabeled: false
 
+seed: 42
+
 data:
     name: dr
     num_workers: 4
@@ -18,7 +20,7 @@ model:
 
 param:
     lr: 3e-4
-    batch_size: 16
+    batch_size: 400
 
 disc:
     alpha: 0.0
@@ -35,6 +37,7 @@ trainer:
     max_epochs: 1000
     cos_decay: True
     warmup_epochs: 10
+    check_val_every_n_epoch: 10
 
 logger:
     project: dr-sweeps
