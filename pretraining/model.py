@@ -285,7 +285,7 @@ class BarlowTwins(L.LightningModule):
 
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
-            ('logistic', LogisticRegression())
+            ('logistic', LogisticRegression(max_iter=1000))
         ])
 
         pipeline.fit(X_train, y_train)
