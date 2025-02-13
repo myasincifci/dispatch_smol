@@ -21,6 +21,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import cohen_kappa_score
 
+from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
+
 class ReverseLayerF(Function):
     @staticmethod
     def forward(ctx, x, alpha):
@@ -187,19 +189,42 @@ class BarlowTwins(L.LightningModule):
 
         return bt_loss + self.cfg.disc.mult * crit_loss
 
+    # def configure_optimizers(self) -> Any:
+    #     optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
+
+    #     scheduler = {
+    #         "scheduler": torch.optim.lr_scheduler.LambdaLR(
+    #             optimizer,
+    #             self._linear_warmup_decay(self.cfg.trainer.warmup),
+    #         ),
+    #         "interval": "step",
+    #         "frequency": 1,
+    #     }
+
+    #     return [optimizer], [scheduler]
+
     def configure_optimizers(self) -> Any:
-        optimizer = optim.Adam(params=self.parameters(), lr=self.lr)
+        optimizer = optim.Adam(params=self.parameters(), lr=self.lr,)
 
         scheduler = {
-            "scheduler": torch.optim.lr_scheduler.LambdaLR(
-                optimizer,
-                self._linear_warmup_decay(self.cfg.trainer.warmup),
+            "scheduler": self.get_linear_warmup_cos_annealing(
+                optimizer=optimizer,
+                warmup_iters=self.cfg.trainer.warmup_epochs*(len(self.trainer.datamodule.train_set)//self.cfg.param.batch_size),
+                total_iters=self.cfg.trainer.max_epochs*(len(self.trainer.datamodule.train_set)//self.cfg.param.batch_size)
             ),
             "interval": "step",
-            "frequency": 1,
+            "frequency": 1
         }
 
         return [optimizer], [scheduler]
+    
+    def get_linear_warmup_cos_annealing(self, optimizer, warmup_iters, total_iters):
+        scheduler_warmup = LinearLR(optimizer, total_iters=warmup_iters, start_factor=1e-100)
+        scheduler_cos_decay = CosineAnnealingLR(optimizer, T_max=total_iters-warmup_iters, eta_min=self.cfg.param.lr/1000)
+        scheduler = SequentialLR(optimizer, schedulers=[scheduler_warmup, 
+                                    scheduler_cos_decay], milestones=[warmup_iters])
+
+        return scheduler
 
     def _fn(self, warmup_steps, step):
         if step < warmup_steps:

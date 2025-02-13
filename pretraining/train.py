@@ -42,7 +42,6 @@ def main(cfg: DictConfig) -> None:
     L.seed_everything(seed, workers=True)
     print(f'Seed:', seed)
 
-    # Data TODO: do properly
     match cfg.data.name:
         case 'camelyon':
             data_module = CamelyonDM(cfg)
@@ -55,11 +54,6 @@ def main(cfg: DictConfig) -> None:
         case _:
             raise Exception('Invalid Dataset')
 
-    # Model
-    # if cfg.model.pretrained:
-    #     backbone = resnet50(ResNet50_Weights.DEFAULT)
-    # else:
-    #     backbone = resnet50()
     backbone = res50(cfg)
     backbone.fc = nn.Identity()
 
@@ -70,7 +64,6 @@ def main(cfg: DictConfig) -> None:
         domain_mapper=data_module.domain_mapper,
         cfg=cfg
     )
-    barlow_twins = barlow_twins
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = L.Trainer(

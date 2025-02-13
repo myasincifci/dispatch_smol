@@ -27,7 +27,7 @@ mixstyle:
 trainer:
     max_steps: 150_000
     check_val_every_n_epoch: 1
-    warmup: 1_000
+    warmup_epochs: 10
 
 logger:
     project: pretraining-base
