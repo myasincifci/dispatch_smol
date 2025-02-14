@@ -2,10 +2,8 @@ defaults:
   - base
 
 name: DR
-logging: true
-unlabeled: false
-
-seed: 42
+logging: True
+unlabeled: False
 
 data:
     name: dr
@@ -19,7 +17,7 @@ model:
     projector_dim: 8_192
 
 param:
-    lr: 0.0002275
+    lr: 3e-4
     batch_size: 400
 
 disc:
@@ -33,10 +31,9 @@ mixstyle:
     eps: 1e-6
 
 trainer:
-    max_epochs: 1000
+    max_steps: 100_000
     cos_decay: True
-    warmup_epochs: 10
-    check_val_every_n_epoch: 10
+    warmup: 10_000
 
 logger:
-    project: dr-cj-scale-2
+    project: pretraining-dr-cj-scale
