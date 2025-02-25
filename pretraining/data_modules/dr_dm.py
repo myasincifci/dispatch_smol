@@ -86,7 +86,7 @@ class DRDM(pl.LightningDataModule):
                 )
         ])
 
-        train_set, self.val_set_ood = get_loo_dr(
+        train_set, val_set_ood = get_loo_dr(
             root=self.data_dir,
             leave_out=leave_out,
             train_tf=self.train_transform,
@@ -96,10 +96,17 @@ class DRDM(pl.LightningDataModule):
         with torch.random.fork_rng():
             torch.manual_seed(42)
             indices = torch.randperm(len(train_set))
+            indices_test = torch.randperm(len(val_set_ood))
+
         split_ratio = 0.8 
         split_point = int(len(train_set) * split_ratio)
         train_indices = indices[:split_point]
         id_val_indices = indices[split_point:]
+
+        if cfg.data.test_subset > 0:
+            self.val_set_ood = Subset(val_set_ood, indices_test[:cfg.data.test_subset])
+        else:
+            self.val_set_ood = val_set_ood
 
         train_set_knn, _ = get_loo_dr(
             root=self.data_dir,
@@ -118,6 +125,7 @@ class DRDM(pl.LightningDataModule):
         self.train_set = Subset(train_set, train_indices)
         self.val_set_id = Subset(train_set_knn, id_val_indices)
         self.train_set_knn = Subset(train_set_knn, train_indices[:subset_size])
+        self.val_set_ood
 
         self.domain_mapper = DomainMapper()
         self.grouper = None
@@ -139,7 +147,7 @@ class DRDM(pl.LightningDataModule):
             self.train_set,
             batch_size=self.batch_size,
             shuffle=True,
-            drop_last=True,
+            drop_last=False,
             num_workers=8,
             pin_memory=True,
             persistent_workers=True

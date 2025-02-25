@@ -53,7 +53,7 @@ def main(cfg: DictConfig) -> None:
         case 'domainnet':
             data_module = DomainNetDM(cfg)
         case 'dr':
-            data_module = DRDM(cfg, leave_out='aptos')
+            data_module = DRDM(cfg, leave_out='eyepacs')
         case _:
             raise Exception('Invalid Dataset')
 

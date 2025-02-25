@@ -13,6 +13,7 @@ data:
     num_classes: 5
     color_aug: true
     color_aug_fct: 1.0
+    test_subset: 8_192
 
 model:
     pretrained: true
@@ -20,7 +21,7 @@ model:
 
 param:
     lr: 3e-4
-    batch_size: 400
+    batch_size: 1_024
 
 disc:
     alpha: 0.0
