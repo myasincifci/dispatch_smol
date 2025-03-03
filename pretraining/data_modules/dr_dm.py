@@ -147,7 +147,7 @@ class DRDM(pl.LightningDataModule):
             self.train_set,
             batch_size=self.batch_size,
             shuffle=True,
-            drop_last=False,
+            drop_last=True,
             num_workers=8,
             pin_memory=True,
             persistent_workers=True

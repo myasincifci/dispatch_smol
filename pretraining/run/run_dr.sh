@@ -15,4 +15,4 @@ rsync -ah --progress /home/myasincifci/data/DR.sqfs /tmp
 
 apptainer run --nv -B /tmp/DR.sqfs:/data/DR:image-src=/ /home/myasincifci/containers/main/main.sif \
     python train.py \
-        --config-name dr_cj_scale_100 seed=${seeds[${SLURM_ARRAY_TASK_ID}]} data.color_aug_fct=1.5
+        --config-name dr_cj_scale_100 seed=${seeds[${SLURM_ARRAY_TASK_ID}]} data.color_aug_fct=0.5
