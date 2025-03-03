@@ -15,7 +15,7 @@ from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 from torchvision import transforms as T
-from model import res50
+from model import res50, res18
 
 import random
 import wandb
@@ -57,7 +57,7 @@ def main(cfg: DictConfig) -> None:
         case _:
             raise Exception('Invalid Dataset')
 
-    backbone = res50(cfg)
+    backbone = res18(cfg)
     backbone.fc = nn.Identity()
 
     barlow_twins = BarlowTwins(
@@ -75,14 +75,14 @@ def main(cfg: DictConfig) -> None:
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         logger=logger,
         log_every_n_steps=5,
-        callbacks=[lr_monitor]
+        callbacks=[lr_monitor],
+        precision='bf16'
     )
 
     trainer.fit(
         model=barlow_twins,
         datamodule=data_module
     )
-
 
 if __name__ == "__main__":
     main()

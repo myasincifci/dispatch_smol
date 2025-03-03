@@ -21,7 +21,7 @@ model:
 
 param:
     lr: 3e-4
-    batch_size: 1_024
+    batch_size: 8
 
 disc:
     alpha: 0.0

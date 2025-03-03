@@ -14,7 +14,7 @@ from torch import Tensor, nn
 from torch.autograd import Function
 from torch.nn import functional as F
 from torch.distributions.beta import Beta
-from torchvision.models.resnet import resnet50, ResNet50_Weights
+from torchvision.models.resnet import resnet50, ResNet50_Weights, resnet18, ResNet18_Weights
 
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -77,12 +77,55 @@ class MixStyle(nn.Module):
 
         return x_normed * sig_mix + mu_mix # denormalize input using the mixed statistics
 
+def res18(cfg):
+    if cfg.model.pretrained:
+        model = resnet18(ResNet18_Weights.DEFAULT)
+    else:
+        model = resnet18()
+    model.fc = nn.Linear(in_features=512, out_features=cfg.data.num_classes, bias=True)
+    
+    if cfg.mixstyle.active:
+        model.ms = MixStyle(
+            p=cfg.mixstyle.p,
+            alpha=cfg.mixstyle.alpha,
+            eps=cfg.mixstyle.eps
+        )
+    else:
+        model.ms = None
+
+    def _forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.ms(x) if self.ms else x
+
+        x = self.layer2(x)
+        x = self.ms(x) if self.ms else x
+
+        x = self.layer3(x)
+        x = self.ms(x) if self.ms else x
+
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+
+        return x 
+    
+    model.forward = MethodType(_forward, model)
+
+    return model
+
 def res50(cfg):
     if cfg.model.pretrained:
         model = resnet50(ResNet50_Weights.DEFAULT)
     else:
         model = resnet50()
-    model.fc = nn.Linear(in_features=512, out_features=cfg.data.num_classes, bias=True)
+    model.fc = nn.Linear(in_features=2048, out_features=cfg.data.num_classes, bias=True)
     
     if cfg.mixstyle.active:
         model.ms = MixStyle(
@@ -125,7 +168,7 @@ class BarlowTwins(L.LightningModule):
         super().__init__(*args, **kwargs)
 
         self.backbone = backbone
-        self.emb_dim = 2048
+        self.emb_dim = 512
         self.projection_head = BarlowTwinsProjectionHead(
             self.emb_dim, cfg.model.projector_dim, cfg.model.projector_dim)
 
